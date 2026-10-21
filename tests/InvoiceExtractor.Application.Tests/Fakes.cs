@@ -30,6 +30,20 @@ internal sealed class FakeDocumentRepository : IDocumentRepository
 	public Task<IReadOnlyList<Document>> ListByBatchAsync(BatchId id, CancellationToken cancellationToken) =>
 		Task.FromResult<IReadOnlyList<Document>>([.. Documents.Where(d => d.BatchId == id)]);
 
+	public Task<IReadOnlyList<Document>> ListByStatusAsync(DocumentStatus status, int limit, CancellationToken cancellationToken) =>
+		Task.FromResult<IReadOnlyList<Document>>([.. Documents.Where(d => d.Status == status).Take(limit)]);
+
+	public Task<IReadOnlyList<Batch>> ListRecentBatchesAsync(int limit, CancellationToken cancellationToken) =>
+		Task.FromResult<IReadOnlyList<Batch>>([.. Batches.OrderByDescending(static b => b.CreatedAt).Take(limit)]);
+
+	public Task<IReadOnlyList<Document>> ListByBatchesAsync(IReadOnlyCollection<BatchId> ids, CancellationToken cancellationToken) =>
+		Task.FromResult<IReadOnlyList<Document>>([.. Documents.Where(d => ids.Contains(d.BatchId))]);
+
+	public Task<IReadOnlyList<Extraction>> ListExtractionsAsync(DocumentId id, CancellationToken cancellationToken) =>
+		Task.FromResult<IReadOnlyList<Extraction>>([]);
+
+	public Task<Document?> FindTrackedAsync(DocumentId id, CancellationToken cancellationToken) => GetAsync(id, cancellationToken);
+
 	public void Add(Batch batch, IReadOnlyCollection<Document> documents) => _staged.Add((batch, documents));
 
 	public Task SaveChangesAsync(CancellationToken cancellationToken)

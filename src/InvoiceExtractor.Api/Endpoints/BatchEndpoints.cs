@@ -1,6 +1,7 @@
 namespace InvoiceExtractor.Api.Endpoints;
 
 using InvoiceExtractor.Application.Features.Documents;
+using InvoiceExtractor.Application.Features.Review;
 using InvoiceExtractor.Application.Features.Upload;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
@@ -36,6 +37,7 @@ internal static class BatchEndpoints
 			// antiforgery token would protect nothing. It runs locally in this MVP (plan §9).
 			.DisableAntiforgery()
 			.WithMetadata(new RequestSizeLimitAttribute(maxRequestBytes));
+		batches.MapGet("/", ListAsync);
 		batches.MapGet("/{id:guid}", GetAsync);
 
 		return batches;
@@ -74,9 +76,12 @@ internal static class BatchEndpoints
 
 	private static async Task<IResult> GetAsync(Guid id, GetBatch useCase, CancellationToken cancellationToken) =>
 		(await useCase.HandleAsync(id, cancellationToken)).ToHttp(Results.Ok);
+
+	private static async Task<IResult> ListAsync(ListBatches useCase, CancellationToken cancellationToken) =>
+		Results.Ok(await useCase.HandleAsync(cancellationToken));
 }
 
-/// <summary>One document's status.</summary>
+/// <summary>One document: its status, its file, its review and approval.</summary>
 internal static class DocumentEndpoints
 {
 	/// <summary>Maps the routes.</summary>
@@ -86,9 +91,33 @@ internal static class DocumentEndpoints
 	{
 		var documents = app.MapGroup("/v1/documents").WithTags("Documents");
 		documents.MapGet("/{id:guid}", GetAsync);
+		documents.MapGet("/{id:guid}/file", GetFileAsync);
+		documents.MapGet("/{id:guid}/review", GetReviewAsync);
+		documents.MapPost("/{id:guid}/approve", ApproveAsync);
+
+		app.MapGet("/v1/review-queue", GetQueueAsync).WithTags("Documents");
 		return documents;
 	}
 
 	private static async Task<IResult> GetAsync(Guid id, GetDocument useCase, CancellationToken cancellationToken) =>
 		(await useCase.HandleAsync(id, cancellationToken)).ToHttp(Results.Ok);
+
+	// Served inline with the media type of the format detected at upload, never the one the browser sent,
+	// and with nosniff, so a file cannot be made to render as something else.
+	private static async Task<IResult> GetFileAsync(Guid id, GetDocumentFile useCase, HttpContext context, CancellationToken cancellationToken) =>
+		(await useCase.HandleAsync(id, cancellationToken)).ToHttp(file =>
+		{
+			context.Response.Headers.XContentTypeOptions = "nosniff";
+			context.Response.Headers.CacheControl = "private, max-age=3600";
+			return Results.File(file.Content, file.ContentType);
+		});
+
+	private static async Task<IResult> GetReviewAsync(Guid id, GetDocumentReview useCase, CancellationToken cancellationToken) =>
+		(await useCase.HandleAsync(id, cancellationToken)).ToHttp(Results.Ok);
+
+	private static async Task<IResult> ApproveAsync(Guid id, ApproveRequest? request, ApproveDocument useCase, CancellationToken cancellationToken) =>
+		(await useCase.HandleAsync(id, request, cancellationToken)).ToHttp(Results.Ok);
+
+	private static async Task<IResult> GetQueueAsync(GetReviewQueue useCase, CancellationToken cancellationToken) =>
+		Results.Ok(await useCase.HandleAsync(cancellationToken));
 }

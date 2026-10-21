@@ -1,5 +1,7 @@
 namespace InvoiceExtractor.Domain.Documents;
 
+using InvoiceExtractor.Domain.Invoices;
+
 /// <summary>The file types accepted, decided from the bytes, never from the extension.</summary>
 public enum DocumentFormat
 {
@@ -112,6 +114,12 @@ public sealed class Document
 	/// <summary>When processing last finished.</summary>
 	public DateTimeOffset? ProcessedAt { get; private set; }
 
+	/// <summary>What the reviewer approved, corrections included; null until a person approves it.</summary>
+	public ExtractedInvoice? ReviewedInvoice { get; private set; }
+
+	/// <summary>When a person approved it.</summary>
+	public DateTimeOffset? ReviewedAt { get; private set; }
+
 	/// <summary>Registers an uploaded file, queued for extraction.</summary>
 	/// <param name="batchId">The upload it came in.</param>
 	/// <param name="fileName">The user's file name.</param>
@@ -199,6 +207,27 @@ public sealed class Document
 		}
 
 		Status = DocumentStatus.Queued;
+	}
+
+	/// <summary>
+	/// A person checked the reading against the document and approves it, with whatever they corrected. The
+	/// reviewer has the last word: rules still failing are shown to them, not enforced, because some documents
+	/// are wrong on paper and still have to be booked.
+	/// </summary>
+	/// <param name="invoice">The data as the reviewer approved it.</param>
+	/// <param name="now">The current time.</param>
+	/// <exception cref="InvalidOperationException">It is not waiting for review.</exception>
+	public void Approve(ExtractedInvoice invoice, DateTimeOffset now)
+	{
+		ArgumentNullException.ThrowIfNull(invoice);
+		if (Status != DocumentStatus.NeedsReview)
+		{
+			throw new InvalidOperationException($"Document {Id} is {Status}; only a document in review can be approved.");
+		}
+
+		Status = DocumentStatus.Approved;
+		ReviewedInvoice = invoice;
+		ReviewedAt = now;
 	}
 
 	private void EnsureProcessing()

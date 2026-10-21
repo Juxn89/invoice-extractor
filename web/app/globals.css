@@ -1,0 +1,43 @@
+@import "tailwindcss";
+
+/* A ledger's palette: warm paper, pine-green ink for what is settled, amber for what needs a look, red for
+   what is wrong. Status colours carry meaning, so each one is used for exactly one thing. */
+@theme {
+	--color-paper: #f6f5f0;
+	--color-card: #ffffff;
+	--color-ink: #1d1c18;
+	--color-muted: #6b685c;
+	--color-line: #e4e1d6;
+	--color-brand: #0e6b5c;
+	--color-brand-dark: #0a5247;
+	--color-brand-soft: #e3f1ec;
+	--color-warn: #a35a06;
+	--color-warn-soft: #fdf2d6;
+	--color-danger: #b42318;
+	--color-danger-soft: #fde9e7;
+	--color-info: #075985;
+	--color-info-soft: #e1f0fa;
+
+	--font-sans: ui-sans-serif, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+	--font-mono: ui-monospace, "Cascadia Mono", "SF Mono", Menlo, Consolas, monospace;
+}
+
+body {
+	background: var(--color-paper);
+	color: var(--color-ink);
+	font-family: var(--font-sans);
+}
+
+/* Amounts line up in columns. */
+.tabular {
+	font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.01ms !important;
+		transition-duration: 0.01ms !important;
+	}
+}

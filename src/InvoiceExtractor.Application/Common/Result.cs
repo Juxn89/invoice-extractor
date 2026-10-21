@@ -8,6 +8,9 @@ public enum ErrorKind
 
 	/// <summary>What was asked for does not exist: 404.</summary>
 	NotFound = 1,
+
+	/// <summary>The request conflicts with the current state, e.g. approving a document not in review: 409.</summary>
+	Conflict = 2,
 }
 
 /// <summary>An expected failure: something the caller can act on. Bugs are exceptions, not errors.</summary>
@@ -27,6 +30,12 @@ public sealed record Error(string Code, string Message, ErrorKind Kind)
 	/// <param name="message">The message.</param>
 	/// <returns>The error.</returns>
 	public static Error NotFound(string code, string message) => new(code, message, ErrorKind.NotFound);
+
+	/// <summary>A 409.</summary>
+	/// <param name="code">The code.</param>
+	/// <param name="message">The message.</param>
+	/// <returns>The error.</returns>
+	public static Error Conflict(string code, string message) => new(code, message, ErrorKind.Conflict);
 }
 
 /// <summary>A value or an <see cref="Error"/>.</summary>

@@ -20,10 +20,14 @@ So far:
   rule is read once more with the failed checks as feedback
   ([ADR 0002](docs/adr/0002-retry-with-validation-feedback.md)). Every call's cost is
   recorded, and a daily budget stops the workers when it is spent.
+- **Web** (`web/`, Next.js 16, Spanish and English): upload a batch with its country, follow each document's
+  status live, and review what validation could not confirm side by side with the original, the failing
+  field highlighted with the rule it broke.
 - **Evals:** a synthetic dataset of 30 invoices and receipts with planted errors, and the scorer every
   extractor will be measured with. See [`evals/README.md`](evals/README.md).
 
-The workers need an Anthropic API key; without one, uploads are queued and wait:
+The workers need an Anthropic API key; without one, uploads are queued and wait. Either export
+`ANTHROPIC_API_KEY` before starting the AppHost, or store it for the API alone:
 
 ```bash
 dotnet user-secrets set Anthropic:ApiKey <key> --project src/InvoiceExtractor.Api
@@ -32,7 +36,11 @@ dotnet user-secrets set Anthropic:ApiKey <key> --project src/InvoiceExtractor.Ap
 ```bash
 dotnet run --project src/InvoiceExtractor.AppHost   # Postgres + API, through .NET Aspire (needs Docker)
 dotnet test                                         # unit, architecture and integration (Testcontainers)
+cd web && pnpm install && pnpm dev                  # the web app on http://localhost:3010, /api forwarded to the API
 ```
+
+The AppHost passes `ANTHROPIC_API_KEY` from your environment to the API as a secret parameter; in
+Development the workers stop for the day after USD 0.05.
 
 Rules for contributors and agents are in [`AGENTS.md`](AGENTS.md); where the tax rules come from is in
 [`docs/verification/tax-rules.md`](docs/verification/tax-rules.md).

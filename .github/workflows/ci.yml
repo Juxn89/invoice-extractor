@@ -33,3 +33,28 @@ jobs:
       # No model is called; the Haiku run is manual and budget-gated (evals/README.md).
       - run: dotnet run --project evals/InvoiceExtractor.Evals -c Release --no-build -- run oracle
       - run: dotnet run --project evals/InvoiceExtractor.Evals -c Release --no-build -- run oracle --set hard
+
+  web:
+    name: Web (lint, types, build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      # The version comes from packageManager in web/package.json.
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: web/package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: web/pnpm-lock.yaml
+      # Frozen: CI installs exactly the lockfile, and pnpm re-checks every entry against minimumReleaseAge.
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm build
+        env:
+          NEXT_TELEMETRY_DISABLED: 1

@@ -102,6 +102,14 @@ namespace InvoiceExtractor.Infrastructure.Persistence.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("processed_at");
 
+                    b.Property<DateTimeOffset?>("ReviewedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("reviewed_at");
+
+                    b.Property<string>("ReviewedInvoice")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("reviewed_invoice");
+
                     b.Property<long>("SizeBytes")
                         .HasColumnType("bigint")
                         .HasColumnName("size_bytes");
@@ -128,9 +136,13 @@ namespace InvoiceExtractor.Infrastructure.Persistence.Migrations
                         .IsUnique()
                         .HasDatabaseName("ix_documents_content_hash");
 
-                    b.HasIndex("CreatedAt")
+                    b.HasIndex(new[] { "CreatedAt" }, "ix_documents_created_at")
                         .HasDatabaseName("ix_documents_created_at")
                         .HasFilter("status = 'Queued'");
+
+                    b.HasIndex(new[] { "CreatedAt" }, "ix_documents_review_queue")
+                        .HasDatabaseName("ix_documents_review_queue")
+                        .HasFilter("status = 'NeedsReview'");
 
                     b.ToTable("documents", (string)null);
                 });

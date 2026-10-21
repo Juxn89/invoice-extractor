@@ -30,14 +30,18 @@ internal sealed class DocumentConfiguration : IEntityTypeConfiguration<Document>
 		builder.Property(d => d.Format).HasConversion<string>().HasMaxLength(EnumColumnLength);
 		builder.Property(d => d.Status).HasConversion<string>().HasMaxLength(EnumColumnLength);
 		builder.Property(d => d.ContentHash).HasMaxLength(ContentHash.HexLength).IsFixedLength();
+		builder.Property(d => d.ReviewedInvoice).HasColumnType("jsonb").HasConversion(JsonColumn<ExtractedInvoice?>.Converter, JsonColumn<ExtractedInvoice?>.Comparer);
 
 		// Idempotent upload: the same bytes are one document, whoever uploads them and however many times.
 		builder.HasIndex(d => d.ContentHash).IsUnique();
 
 		builder.HasIndex(d => d.BatchId);
 
+		// The review queue lists what waits for a person, oldest first.
+		builder.HasIndex(d => d.CreatedAt, "ix_documents_review_queue").HasFilter("status = 'NeedsReview'").HasDatabaseName("ix_documents_review_queue");
+
 		// The worker polls for queued work in arrival order; a partial index keeps that scan small.
-		builder.HasIndex(d => d.CreatedAt).HasFilter("status = 'Queued'");
+		builder.HasIndex(d => d.CreatedAt, "ix_documents_created_at").HasFilter("status = 'Queued'");
 
 		// Optimistic concurrency on Postgres' xmin system column: no extra column, and a worker whose lease ran
 		// out cannot overwrite the outcome of the worker that took the document over.

@@ -1,0 +1,9 @@
+packages:
+  - '.'
+
+# No dependency runs install scripts. unrs-resolver (ESLint's import resolver) ships prebuilt binaries.
+allowBuilds:
+  unrs-resolver: false
+
+# The repo's rule, enforced by pnpm: no version younger than two weeks (in minutes).
+minimumReleaseAge: 20160

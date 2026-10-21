@@ -12,9 +12,17 @@ var postgres = builder.AddPostgres("postgres")
 
 var database = postgres.AddDatabase("invoicesdb");
 
-builder.AddProject<Projects.InvoiceExtractor_Api>("api")
+var api = builder.AddProject<Projects.InvoiceExtractor_Api>("api")
 	.WithReference(database)
 	.WaitFor(database)
 	.WithHttpHealthCheck("/health");
+
+// The workers read documents with Claude only when the developer's environment has a key: it is passed on as a
+// secret parameter (masked in the dashboard), never written to a file in the repo. Without it the API still
+// runs, and uploads wait in the queue.
+if (Environment.GetEnvironmentVariable("ANTHROPIC_API_KEY") is { Length: > 0 } key)
+{
+	api.WithEnvironment("Anthropic__ApiKey", builder.AddParameter("anthropic-api-key", key, secret: true));
+}
 
 await builder.Build().RunAsync();

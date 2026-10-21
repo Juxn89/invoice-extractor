@@ -30,6 +30,37 @@ public interface IDocumentRepository
 	/// <returns>The documents.</returns>
 	Task<IReadOnlyList<Document>> ListByBatchAsync(BatchId id, CancellationToken cancellationToken);
 
+	/// <summary>Documents in one status, oldest first.</summary>
+	/// <param name="status">The status.</param>
+	/// <param name="limit">At most this many.</param>
+	/// <param name="cancellationToken">Cancellation.</param>
+	/// <returns>The documents.</returns>
+	Task<IReadOnlyList<Document>> ListByStatusAsync(DocumentStatus status, int limit, CancellationToken cancellationToken);
+
+	/// <summary>The most recent batches, newest first.</summary>
+	/// <param name="limit">At most this many.</param>
+	/// <param name="cancellationToken">Cancellation.</param>
+	/// <returns>The batches.</returns>
+	Task<IReadOnlyList<Batch>> ListRecentBatchesAsync(int limit, CancellationToken cancellationToken);
+
+	/// <summary>The documents of several batches, oldest first.</summary>
+	/// <param name="ids">The batches.</param>
+	/// <param name="cancellationToken">Cancellation.</param>
+	/// <returns>The documents.</returns>
+	Task<IReadOnlyList<Document>> ListByBatchesAsync(IReadOnlyCollection<BatchId> ids, CancellationToken cancellationToken);
+
+	/// <summary>Every model call made on a document, in order.</summary>
+	/// <param name="id">The document.</param>
+	/// <param name="cancellationToken">Cancellation.</param>
+	/// <returns>The extractions.</returns>
+	Task<IReadOnlyList<Extraction>> ListExtractionsAsync(DocumentId id, CancellationToken cancellationToken);
+
+	/// <summary>One document, tracked, to change it.</summary>
+	/// <param name="id">Its id.</param>
+	/// <param name="cancellationToken">Cancellation.</param>
+	/// <returns>The document, or <see langword="null"/>.</returns>
+	Task<Document?> FindTrackedAsync(DocumentId id, CancellationToken cancellationToken);
+
 	/// <summary>Stages a new batch and its documents; nothing is written until <see cref="SaveChangesAsync"/>.</summary>
 	/// <param name="batch">The batch.</param>
 	/// <param name="documents">Its documents.</param>

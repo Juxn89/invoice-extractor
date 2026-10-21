@@ -50,5 +50,12 @@ truncated or corrupted.
 `document.image_too_large` · per file. An image over 50 megapixels. The cap bounds the memory one upload
 can make the server allocate.
 
+### document-not_in_review
+`document.not_in_review` · 409. Only a document waiting for review can be approved; this one is queued,
+being read, already approved or failed.
+
+### review-missing_invoice
+`review.missing_invoice` · 400. An approval must carry the invoice as approved, in the body's `invoice`.
+
 ### document-not_found
 `document.not_found` · 404. No document has that id.

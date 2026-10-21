@@ -3,6 +3,7 @@ namespace InvoiceExtractor.Infrastructure;
 using InvoiceExtractor.Application.Abstractions;
 using InvoiceExtractor.Application.Features.Documents;
 using InvoiceExtractor.Application.Features.Processing;
+using InvoiceExtractor.Application.Features.Review;
 using InvoiceExtractor.Application.Features.Upload;
 using InvoiceExtractor.Infrastructure.Ai;
 using InvoiceExtractor.Infrastructure.Documents;
@@ -53,6 +54,11 @@ public static class DependencyInjection
 		services.AddScoped<UploadBatch>();
 		services.AddScoped<GetDocument>();
 		services.AddScoped<GetBatch>();
+		services.AddScoped<ListBatches>();
+		services.AddScoped<GetReviewQueue>();
+		services.AddScoped<GetDocumentReview>();
+		services.AddScoped<GetDocumentFile>();
+		services.AddScoped<ApproveDocument>();
 		services.AddSingleton<ExtractionPipeline>();
 		services.AddScoped<ProcessDocument>();
 
