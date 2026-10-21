@@ -143,6 +143,72 @@ public sealed class Document
 		return new Document(DocumentId.New(), batchId, Shorten(fileName), contentHash, format, pages, hasTextLayer, sizeBytes, now);
 	}
 
+	/// <summary>
+	/// Takes the document for processing until <paramref name="leaseUntil"/>. The queue does this in one SQL
+	/// statement (so two workers cannot both take it); this method states the same rule for code and tests.
+	/// </summary>
+	/// <param name="now">The current time.</param>
+	/// <param name="leaseUntil">When the claim lapses if the worker never reports back.</param>
+	/// <exception cref="InvalidOperationException">It is neither queued nor held under an expired lease.</exception>
+	public void Claim(DateTimeOffset now, DateTimeOffset leaseUntil)
+	{
+		var claimable = Status == DocumentStatus.Queued || (Status == DocumentStatus.Processing && LeaseUntil < now);
+		if (!claimable || leaseUntil <= now)
+		{
+			throw new InvalidOperationException($"Document {Id} is {Status} and cannot be claimed.");
+		}
+
+		Status = DocumentStatus.Processing;
+		Attempts++;
+		LeaseUntil = leaseUntil;
+	}
+
+	/// <summary>Records a finished extraction: approved without review, or waiting for a person.</summary>
+	/// <param name="outcome"><see cref="DocumentStatus.AutoApproved"/> or <see cref="DocumentStatus.NeedsReview"/>.</param>
+	/// <param name="now">The current time.</param>
+	/// <exception cref="InvalidOperationException">It is not being processed.</exception>
+	public void Complete(DocumentStatus outcome, DateTimeOffset now)
+	{
+		EnsureProcessing();
+		if (outcome is not (DocumentStatus.AutoApproved or DocumentStatus.NeedsReview))
+		{
+			throw new ArgumentOutOfRangeException(nameof(outcome), outcome, "An extraction ends approved or in review.");
+		}
+
+		Status = outcome;
+		LeaseUntil = null;
+		ProcessedAt = now;
+	}
+
+	/// <summary>
+	/// Gives the document back after an attempt that failed for a transient reason: queued again, or failed for
+	/// good once it has used <paramref name="maxAttempts"/>.
+	/// </summary>
+	/// <param name="maxAttempts">Attempts allowed in total.</param>
+	/// <param name="now">The current time.</param>
+	/// <exception cref="InvalidOperationException">It is not being processed.</exception>
+	public void Release(int maxAttempts, DateTimeOffset now)
+	{
+		EnsureProcessing();
+		LeaseUntil = null;
+		if (Attempts >= maxAttempts)
+		{
+			Status = DocumentStatus.Failed;
+			ProcessedAt = now;
+			return;
+		}
+
+		Status = DocumentStatus.Queued;
+	}
+
+	private void EnsureProcessing()
+	{
+		if (Status != DocumentStatus.Processing)
+		{
+			throw new InvalidOperationException($"Document {Id} is {Status}, not {DocumentStatus.Processing}.");
+		}
+	}
+
 	// Keeps only the name (a browser on Windows may send the full path, with backslashes that Linux does not
 	// treat as separators), and keeps the extension when cutting, since it tells the user which file it was.
 	private static string Shorten(string fileName)
@@ -166,10 +232,14 @@ public sealed class Document
 /// <summary>One upload of one or more files.</summary>
 public sealed class Batch
 {
-	private Batch(BatchId id, int fileCount, DateTimeOffset createdAt)
+	/// <summary>Country codes are ISO 3166-1 alpha-2, or <c>XX</c> for the generic profile.</summary>
+	public const int CountryLength = 2;
+
+	private Batch(BatchId id, int fileCount, string country, DateTimeOffset createdAt)
 	{
 		Id = id;
 		FileCount = fileCount;
+		Country = country;
 		CreatedAt = createdAt;
 	}
 
@@ -179,16 +249,29 @@ public sealed class Batch
 	/// <summary>New documents the upload created (duplicates and rejected files are not counted).</summary>
 	public int FileCount { get; private set; }
 
+	/// <summary>
+	/// The country whose tax rules validate the batch's documents. Chosen at upload, never inferred from what
+	/// the model read: a misread tax id must fail the issuer country's format, not fall back to a looser one.
+	/// </summary>
+	public string Country { get; private set; }
+
 	/// <summary>When it was uploaded.</summary>
 	public DateTimeOffset CreatedAt { get; private set; }
 
 	/// <summary>Starts a batch.</summary>
 	/// <param name="fileCount">New documents in it, at least 1.</param>
+	/// <param name="country">The tax profile's country code.</param>
 	/// <param name="now">The upload time.</param>
 	/// <returns>The batch.</returns>
-	public static Batch Start(int fileCount, DateTimeOffset now)
+	public static Batch Start(int fileCount, string country, DateTimeOffset now)
 	{
 		ArgumentOutOfRangeException.ThrowIfLessThan(fileCount, 1);
-		return new Batch(BatchId.New(), fileCount, now);
+		ArgumentException.ThrowIfNullOrWhiteSpace(country);
+		if (country.Length != CountryLength)
+		{
+			throw new ArgumentException("A country code has two letters.", nameof(country));
+		}
+
+		return new Batch(BatchId.New(), fileCount, country.ToUpperInvariant(), now);
 	}
 }

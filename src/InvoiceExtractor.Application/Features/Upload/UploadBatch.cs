@@ -3,6 +3,7 @@ namespace InvoiceExtractor.Application.Features.Upload;
 using InvoiceExtractor.Application.Abstractions;
 using InvoiceExtractor.Application.Common;
 using InvoiceExtractor.Application.Features.Documents;
+using InvoiceExtractor.Application.Features.Processing;
 using InvoiceExtractor.Domain.Documents;
 using Microsoft.Extensions.Options;
 
@@ -36,8 +37,9 @@ public sealed record FileResult(string FileName, UploadOutcome Outcome, Document
 
 /// <summary>An upload's results, one per file in the order sent.</summary>
 /// <param name="BatchId">The new batch, or <see langword="null"/> when no file was new.</param>
+/// <param name="Country">The tax profile the new documents will be validated with.</param>
 /// <param name="Files">The results.</param>
-public sealed record UploadResponse(Guid? BatchId, IReadOnlyList<FileResult> Files);
+public sealed record UploadResponse(Guid? BatchId, string Country, IReadOnlyList<FileResult> Files);
 
 /// <summary>
 /// Accepts a batch of files: each one is checked on its own (size, real format, readable, page count), so one
@@ -47,12 +49,14 @@ public sealed record UploadResponse(Guid? BatchId, IReadOnlyList<FileResult> Fil
 /// <param name="documents">The repository.</param>
 /// <param name="files">The file store.</param>
 /// <param name="inspector">Opens each file far enough to know it is usable.</param>
+/// <param name="profiles">The countries a batch can be validated with.</param>
 /// <param name="options">The limits.</param>
 /// <param name="clock">The clock.</param>
 public sealed class UploadBatch(
 	IDocumentRepository documents,
 	IFileStore files,
 	IDocumentInspector inspector,
+	TaxProfileCatalog profiles,
 	IOptions<UploadOptions> options,
 	TimeProvider clock)
 {
@@ -62,13 +66,22 @@ public sealed class UploadBatch(
 
 	/// <summary>Uploads the batch.</summary>
 	/// <param name="uploads">The files, in the order the user sent them.</param>
+	/// <param name="country">The tax profile's country code; the configured default when omitted.</param>
 	/// <param name="cancellationToken">Cancellation.</param>
-	/// <returns>One result per file, or an error for the request as a whole (empty, too many files).</returns>
-	public async Task<Result<UploadResponse>> HandleAsync(IReadOnlyList<UploadedFile> uploads, CancellationToken cancellationToken)
+	/// <returns>One result per file, or an error for the request as a whole (empty, too many files, country).</returns>
+	public async Task<Result<UploadResponse>> HandleAsync(IReadOnlyList<UploadedFile> uploads, string? country, CancellationToken cancellationToken)
 	{
 		ArgumentNullException.ThrowIfNull(uploads);
 		ArgumentNullException.ThrowIfNull(options);
 		var limits = options.Value;
+
+		country = string.IsNullOrWhiteSpace(country) ? limits.DefaultCountry : country.Trim().ToUpperInvariant();
+		if (!profiles.IsKnown(country))
+		{
+			return Error.Validation(
+				UploadErrors.UnknownCountry,
+				$"Unknown country '{country}'; use one of {string.Join(", ", profiles.Codes)}.");
+		}
 
 		if (uploads.Count == 0)
 		{
@@ -88,7 +101,7 @@ public sealed class UploadBatch(
 		{
 			try
 			{
-				return await StoreAsync(checkedFiles, cancellationToken).ConfigureAwait(false);
+				return await StoreAsync(checkedFiles, country, cancellationToken).ConfigureAwait(false);
 			}
 			catch (DuplicateContentException) when (attempt < SaveAttempts)
 			{
@@ -134,7 +147,7 @@ public sealed class UploadBatch(
 		return new CheckedFile(upload, ContentHash.Compute(content.Span), format.Value, inspection.Value, null);
 	}
 
-	private async Task<UploadResponse> StoreAsync(IReadOnlyList<CheckedFile> checkedFiles, CancellationToken cancellationToken)
+	private async Task<UploadResponse> StoreAsync(IReadOnlyList<CheckedFile> checkedFiles, string country, CancellationToken cancellationToken)
 	{
 		var hashes = checkedFiles.Where(static f => f.Hash is not null).Select(static f => f.Hash!).Distinct().ToList();
 		IReadOnlyDictionary<ContentHash, Document> existing = hashes.Count == 0
@@ -151,7 +164,7 @@ public sealed class UploadBatch(
 		var created = new Dictionary<ContentHash, Document>();
 		if (newFiles.Count > 0)
 		{
-			batch = Batch.Start(newFiles.Count, now);
+			batch = Batch.Start(newFiles.Count, country, now);
 			foreach (var file in newFiles)
 			{
 				created[file.Hash!] = Document.Queue(
@@ -191,7 +204,7 @@ public sealed class UploadBatch(
 			return new FileResult(file.Upload.FileName, outcome, DocumentResponse.From(created[file.Hash!]), null);
 		}).ToList();
 
-		return new UploadResponse(batch?.Id.Value, results);
+		return new UploadResponse(batch?.Id.Value, country, results);
 	}
 
 	private sealed record CheckedFile(

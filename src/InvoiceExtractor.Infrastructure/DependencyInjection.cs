@@ -2,11 +2,13 @@ namespace InvoiceExtractor.Infrastructure;
 
 using InvoiceExtractor.Application.Abstractions;
 using InvoiceExtractor.Application.Features.Documents;
+using InvoiceExtractor.Application.Features.Processing;
 using InvoiceExtractor.Application.Features.Upload;
 using InvoiceExtractor.Infrastructure.Ai;
 using InvoiceExtractor.Infrastructure.Documents;
 using InvoiceExtractor.Infrastructure.Files;
 using InvoiceExtractor.Infrastructure.Persistence;
+using InvoiceExtractor.Infrastructure.Processing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -37,8 +39,12 @@ public static class DependencyInjection
 		AddOptions<UploadOptions>(services, configuration, UploadOptions.SectionName);
 		AddOptions<FileStoreOptions>(services, configuration, FileStoreOptions.SectionName);
 		AddOptions<AnthropicOptions>(services, configuration, AnthropicOptions.SectionName);
+		AddOptions<ProcessingOptions>(services, configuration, ProcessingOptions.SectionName);
+		AddOptions<TaxOptions>(services, configuration, TaxOptions.SectionName);
+		services.AddSingleton<TaxProfileCatalog>();
 
 		services.AddScoped<IDocumentRepository, DocumentRepository>();
+		services.AddScoped<IDocumentQueue, PgDocumentQueue>();
 		services.AddSingleton<IFileStore, LocalFileStore>();
 		services.AddSingleton<IDocumentInspector, DocumentInspector>();
 		services.AddSingleton<IDocumentPreprocessor, DocumentPreprocessor>();
@@ -47,6 +53,10 @@ public static class DependencyInjection
 		services.AddScoped<UploadBatch>();
 		services.AddScoped<GetDocument>();
 		services.AddScoped<GetBatch>();
+		services.AddScoped<ProcessDocument>();
+
+		services.AddSingleton<ExtractionWorker>();
+		services.AddHostedService(static provider => provider.GetRequiredService<ExtractionWorker>());
 
 		return services;
 	}

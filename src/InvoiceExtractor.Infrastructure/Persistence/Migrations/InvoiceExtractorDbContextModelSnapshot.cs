@@ -28,6 +28,13 @@ namespace InvoiceExtractor.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
+                    b.Property<string>("Country")
+                        .IsRequired()
+                        .HasMaxLength(2)
+                        .HasColumnType("character(2)")
+                        .HasColumnName("country")
+                        .IsFixedLength();
+
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
@@ -105,6 +112,12 @@ namespace InvoiceExtractor.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(32)")
                         .HasColumnName("status");
 
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
                     b.HasKey("Id")
                         .HasName("pk_documents");
 
@@ -122,6 +135,74 @@ namespace InvoiceExtractor.Infrastructure.Persistence.Migrations
                     b.ToTable("documents", (string)null);
                 });
 
+            modelBuilder.Entity("InvoiceExtractor.Domain.Documents.Extraction", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<int>("Attempt")
+                        .HasColumnType("integer")
+                        .HasColumnName("attempt");
+
+                    b.Property<string>("Confidence")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("confidence");
+
+                    b.Property<decimal>("CostUsd")
+                        .HasPrecision(12, 6)
+                        .HasColumnType("numeric(12,6)")
+                        .HasColumnName("cost_usd");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("DocumentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("document_id");
+
+                    b.Property<string>("Failure")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("failure");
+
+                    b.Property<long>("InputTokens")
+                        .HasColumnType("bigint")
+                        .HasColumnName("input_tokens");
+
+                    b.Property<string>("Invoice")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("invoice");
+
+                    b.Property<string>("Issues")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("issues");
+
+                    b.Property<string>("Model")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("model");
+
+                    b.Property<long>("OutputTokens")
+                        .HasColumnType("bigint")
+                        .HasColumnName("output_tokens");
+
+                    b.HasKey("Id")
+                        .HasName("pk_extractions");
+
+                    b.HasIndex("CreatedAt")
+                        .HasDatabaseName("ix_extractions_created_at");
+
+                    b.HasIndex("DocumentId")
+                        .HasDatabaseName("ix_extractions_document_id");
+
+                    b.ToTable("extractions", (string)null);
+                });
+
             modelBuilder.Entity("InvoiceExtractor.Domain.Documents.Document", b =>
                 {
                     b.HasOne("InvoiceExtractor.Domain.Documents.Batch", null)
@@ -130,6 +211,16 @@ namespace InvoiceExtractor.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_documents_batches_batch_id");
+                });
+
+            modelBuilder.Entity("InvoiceExtractor.Domain.Documents.Extraction", b =>
+                {
+                    b.HasOne("InvoiceExtractor.Domain.Documents.Document", null)
+                        .WithMany()
+                        .HasForeignKey("DocumentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_extractions_documents_document_id");
                 });
 #pragma warning restore 612, 618
         }

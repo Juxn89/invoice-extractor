@@ -50,6 +50,9 @@ public static class UploadErrors
 	/// <summary>More files than one batch takes.</summary>
 	public const string TooManyFiles = "batch.too_many_files";
 
+	/// <summary>A country with no tax profile.</summary>
+	public const string UnknownCountry = "batch.unknown_country";
+
 	/// <summary>A zero-byte file.</summary>
 	public const string EmptyFile = "document.empty";
 

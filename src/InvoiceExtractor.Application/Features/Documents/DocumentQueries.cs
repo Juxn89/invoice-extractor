@@ -52,9 +52,10 @@ public sealed record DocumentResponse(
 
 /// <summary>A batch and its documents.</summary>
 /// <param name="Id">The id.</param>
+/// <param name="Country">The tax profile its documents are validated with.</param>
 /// <param name="CreatedAt">When it was uploaded.</param>
 /// <param name="Documents">Its documents, oldest first.</param>
-public sealed record BatchResponse(Guid Id, DateTimeOffset CreatedAt, IReadOnlyList<DocumentResponse> Documents);
+public sealed record BatchResponse(Guid Id, string Country, DateTimeOffset CreatedAt, IReadOnlyList<DocumentResponse> Documents);
 
 /// <summary>Reads one document.</summary>
 /// <param name="documents">The repository.</param>
@@ -91,7 +92,7 @@ public sealed class GetBatch(IDocumentRepository documents)
 		}
 
 		var items = await documents.ListByBatchAsync(batchId, cancellationToken).ConfigureAwait(false);
-		return new BatchResponse(batch.Id.Value, batch.CreatedAt, [.. items.Select(DocumentResponse.From)]);
+		return new BatchResponse(batch.Id.Value, batch.Country, batch.CreatedAt, [.. items.Select(DocumentResponse.From)]);
 	}
 }
 

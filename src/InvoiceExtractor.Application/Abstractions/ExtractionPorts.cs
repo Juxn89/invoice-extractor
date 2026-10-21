@@ -2,19 +2,6 @@ namespace InvoiceExtractor.Application.Abstractions;
 
 using InvoiceExtractor.Domain.Invoices;
 
-/// <summary>How sure the model says it is of a field. A hint for the reviewer, never a reason to approve.</summary>
-public enum FieldConfidence
-{
-	/// <summary>Hard to read, inferred or guessed.</summary>
-	Low = 1,
-
-	/// <summary>Read, with some doubt.</summary>
-	Medium = 2,
-
-	/// <summary>Printed clearly.</summary>
-	High = 3,
-}
-
 /// <summary>What one model call cost.</summary>
 /// <param name="Model">The model id.</param>
 /// <param name="InputTokens">Billed input tokens.</param>
@@ -39,6 +26,12 @@ public sealed record InvoiceExtractionResult(
 /// <summary>Reads an invoice with a language model.</summary>
 public interface IInvoiceExtractor
 {
+	/// <summary>
+	/// Whether the model can be called at all (an API key is set). When it cannot, the worker stays idle
+	/// instead of spending every document's attempts on a call that is bound to fail.
+	/// </summary>
+	bool IsConfigured { get; }
+
 	/// <summary>Reads one prepared document.</summary>
 	/// <param name="document">Text, a PDF or an image (see <see cref="IDocumentPreprocessor"/>).</param>
 	/// <param name="cancellationToken">Cancellation.</param>

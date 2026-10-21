@@ -2,6 +2,7 @@ namespace InvoiceExtractor.Application.Tests;
 
 using InvoiceExtractor.Application.Abstractions;
 using InvoiceExtractor.Application.Common;
+using InvoiceExtractor.Application.Features.Processing;
 using InvoiceExtractor.Application.Features.Upload;
 using InvoiceExtractor.Domain.Documents;
 using Microsoft.Extensions.Options;
@@ -15,13 +16,14 @@ public sealed class UploadBatchTests
 	private readonly FakeInspector _inspector = new();
 	private readonly UploadOptions _options = new();
 
-	private UploadBatch UseCase() => new(_documents, _files, _inspector, Options.Create(_options), new FixedClock(Now));
+	private UploadBatch UseCase() =>
+		new(_documents, _files, _inspector, new TaxProfileCatalog(Options.Create(new TaxOptions())), Options.Create(_options), new FixedClock(Now));
 
 	private static UploadedFile File(string name, byte[] content) => new(name, content.Length, content);
 
 	private async Task<UploadResponse> UploadAsync(params UploadedFile[] uploads)
 	{
-		var result = await UseCase().HandleAsync(uploads, CancellationToken.None);
+		var result = await UseCase().HandleAsync(uploads, null, CancellationToken.None);
 		Assert.True(result.IsSuccess, result.Error?.Message);
 		return result.Value;
 	}
@@ -104,7 +106,7 @@ public sealed class UploadBatchTests
 	{
 		var uploads = Enumerable.Range(0, count).Select(i => File($"{i}.pdf", Files.Pdf(i.ToString(System.Globalization.CultureInfo.InvariantCulture)))).ToList();
 
-		var result = await UseCase().HandleAsync(uploads, CancellationToken.None);
+		var result = await UseCase().HandleAsync(uploads, null, CancellationToken.None);
 
 		Assert.Equal(code, result.Error?.Code);
 		Assert.Empty(_documents.Documents);
@@ -122,6 +124,26 @@ public sealed class UploadBatchTests
 		Assert.Equal([UploadOutcome.Duplicate, UploadOutcome.Queued], response.Files.Select(static f => f.Outcome));
 		Assert.Equal(theirs.Id.Value, response.Files[0].Document!.Id);
 		Assert.Equal(2, _documents.Saves);
+	}
+
+	[Fact]
+	public async Task A_batch_takes_the_default_country_unless_one_is_given()
+	{
+		var byDefault = await UploadAsync(File("a.pdf", Files.Pdf("a")));
+		var mexican = await UseCase().HandleAsync([File("b.pdf", Files.Pdf("b"))], " mx ", CancellationToken.None);
+
+		Assert.Equal(_options.DefaultCountry, byDefault.Country);
+		Assert.Equal("MX", mexican.Value.Country);
+		Assert.Equal(["NI", "MX"], _documents.Batches.Select(static b => b.Country));
+	}
+
+	[Fact]
+	public async Task An_unknown_country_is_refused_before_anything_is_stored()
+	{
+		var result = await UseCase().HandleAsync([File("a.pdf", Files.Pdf("a"))], "CO", CancellationToken.None);
+
+		Assert.Equal(UploadErrors.UnknownCountry, result.Error?.Code);
+		Assert.Empty(_files.Files);
 	}
 
 	private sealed class FixedClock(DateTimeOffset now) : TimeProvider

@@ -3,6 +3,7 @@ namespace InvoiceExtractor.Integration.Tests;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using InvoiceExtractor.Application.Abstractions;
+using InvoiceExtractor.Domain.Invoices;
 using InvoiceExtractor.Domain.Validation;
 using InvoiceExtractor.Infrastructure.Ai;
 

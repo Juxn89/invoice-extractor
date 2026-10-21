@@ -15,7 +15,7 @@ public sealed class PersistenceTests(PostgresFixture fixture) : IAsyncLifetime
 
 	private static (Batch Batch, Document Document) NewDocument(ContentHash hash)
 	{
-		var batch = Batch.Start(1, Now);
+		var batch = Batch.Start(1, "NI", Now);
 		return (batch, Document.Queue(batch.Id, "factura.pdf", hash, DocumentFormat.Pdf, 1, true, 100, Now));
 	}
 

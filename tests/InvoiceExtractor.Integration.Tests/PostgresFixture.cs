@@ -36,7 +36,9 @@ public sealed class PostgresFixture : IAsyncLifetime
 		_api = new WebApplicationFactory<Program>().WithWebHostBuilder(host => host
 			.UseEnvironment("Testing")
 			.UseSetting("ConnectionStrings:invoicesdb", ConnectionString)
-			.UseSetting("FileStore:RootPath", StorageRoot));
+			.UseSetting("FileStore:RootPath", StorageRoot)
+			// The API tests exercise the upload side; the worker has its own tests with a fake model.
+			.UseSetting("Processing:Enabled", "false"));
 	}
 
 	public async Task DisposeAsync()
@@ -65,7 +67,7 @@ public sealed class PostgresFixture : IAsyncLifetime
 	public async Task ResetAsync()
 	{
 		await using var db = CreateContext();
-		await db.Database.ExecuteSqlRawAsync("TRUNCATE documents, batches");
+		await db.Database.ExecuteSqlRawAsync("TRUNCATE extractions, documents, batches");
 	}
 }
 

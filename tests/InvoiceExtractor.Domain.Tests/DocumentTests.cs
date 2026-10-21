@@ -54,4 +54,77 @@ public sealed class DocumentTests
 		Assert.Equal(hash, ContentHash.FromHex(hash.Value.ToUpperInvariant()));
 		Assert.Throws<ArgumentException>(() => ContentHash.FromHex("not-a-hash"));
 	}
+
+	[Fact]
+	public void A_claim_takes_a_queued_document_and_counts_an_attempt()
+	{
+		var document = Queue();
+
+		document.Claim(Now, Now.AddMinutes(5));
+
+		Assert.Equal(DocumentStatus.Processing, document.Status);
+		Assert.Equal(1, document.Attempts);
+		Assert.Equal(Now.AddMinutes(5), document.LeaseUntil);
+	}
+
+	[Fact]
+	public void A_held_document_can_be_claimed_again_only_once_its_lease_has_run_out()
+	{
+		var document = Queue();
+		document.Claim(Now, Now.AddMinutes(5));
+
+		Assert.Throws<InvalidOperationException>(() => document.Claim(Now.AddMinutes(1), Now.AddMinutes(6)));
+
+		document.Claim(Now.AddMinutes(6), Now.AddMinutes(11));
+		Assert.Equal(2, document.Attempts);
+	}
+
+	[Theory]
+	[InlineData(DocumentStatus.AutoApproved)]
+	[InlineData(DocumentStatus.NeedsReview)]
+	public void Completing_ends_the_lease_and_stamps_the_time(DocumentStatus outcome)
+	{
+		var document = Queue();
+		document.Claim(Now, Now.AddMinutes(5));
+
+		document.Complete(outcome, Now.AddSeconds(4));
+
+		Assert.Equal(outcome, document.Status);
+		Assert.Null(document.LeaseUntil);
+		Assert.Equal(Now.AddSeconds(4), document.ProcessedAt);
+	}
+
+	[Fact]
+	public void Only_a_document_being_processed_can_complete_and_only_as_approved_or_in_review()
+	{
+		var document = Queue();
+		Assert.Throws<InvalidOperationException>(() => document.Complete(DocumentStatus.AutoApproved, Now));
+
+		document.Claim(Now, Now.AddMinutes(5));
+		Assert.Throws<ArgumentOutOfRangeException>(() => document.Complete(DocumentStatus.Approved, Now));
+	}
+
+	[Fact]
+	public void A_released_document_is_queued_again_until_it_runs_out_of_attempts()
+	{
+		const int maxAttempts = 2;
+		var document = Queue();
+
+		document.Claim(Now, Now.AddMinutes(5));
+		document.Release(maxAttempts, Now);
+		Assert.Equal(DocumentStatus.Queued, document.Status);
+		Assert.Null(document.LeaseUntil);
+
+		document.Claim(Now, Now.AddMinutes(5));
+		document.Release(maxAttempts, Now.AddMinutes(1));
+		Assert.Equal(DocumentStatus.Failed, document.Status);
+		Assert.Equal(Now.AddMinutes(1), document.ProcessedAt);
+	}
+
+	[Fact]
+	public void A_batch_keeps_its_country_in_upper_case_and_refuses_anything_but_two_letters()
+	{
+		Assert.Equal("MX", Batch.Start(1, "mx", Now).Country);
+		Assert.Throws<ArgumentException>(() => Batch.Start(1, "MEX", Now));
+	}
 }

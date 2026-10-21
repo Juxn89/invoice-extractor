@@ -26,3 +26,15 @@ public readonly record struct DocumentId(Guid Value)
 	/// <inheritdoc />
 	public override string ToString() => Value.ToString();
 }
+
+/// <summary>An extraction's id. See <see cref="BatchId"/>.</summary>
+/// <param name="Value">The GUID.</param>
+public readonly record struct ExtractionId(Guid Value)
+{
+	/// <summary>A new time-ordered id.</summary>
+	/// <returns>The id.</returns>
+	public static ExtractionId New() => new(Guid.CreateVersion7());
+
+	/// <inheritdoc />
+	public override string ToString() => Value.ToString();
+}

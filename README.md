@@ -14,8 +14,18 @@ So far:
   [`docs/errors.md`](docs/errors.md).
 - **Preprocessing:** a digital PDF goes to the model as text (PdfPig), a scanned one as the PDF itself, and a
   photo as an upright JPEG no larger than the model uses (SkiaSharp, EXIF orientation applied).
+- **Processing:** a queue in Postgres (`FOR UPDATE SKIP LOCKED` with a lease, see
+  [ADR 0003](docs/adr/0003-queue-in-postgres.md)) feeds workers that read each document with Claude Haiku 5.5,
+  validate it with the batch's country rules and approve it or send it to review. Every call's cost is
+  recorded, and a daily budget stops the workers when it is spent.
 - **Evals:** a synthetic dataset of 30 invoices and receipts with planted errors, and the scorer every
   extractor will be measured with. See [`evals/README.md`](evals/README.md).
+
+The workers need an Anthropic API key; without one, uploads are queued and wait:
+
+```bash
+dotnet user-secrets set Anthropic:ApiKey <key> --project src/InvoiceExtractor.Api
+```
 
 ```bash
 dotnet run --project src/InvoiceExtractor.AppHost   # Postgres + API, through .NET Aspire (needs Docker)

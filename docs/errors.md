@@ -15,6 +15,10 @@ because one bad file never sinks the rest.
 `batch.too_many_files` · 400. More files than one batch takes (`Upload:MaxFilesPerBatch`, 20 by default).
 Split the upload.
 
+### batch-unknown_country
+`batch.unknown_country` · 400. The `country` form field names no tax profile. Use `NI` (Nicaragua), `MX`
+(Mexico) or `XX` (generic rules). Without the field, the batch takes `Upload:DefaultCountry`.
+
 ### batch-not_found
 `batch.not_found` · 404. No batch has that id.
 

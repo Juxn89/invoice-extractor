@@ -43,6 +43,7 @@ internal static class BatchEndpoints
 
 	private static async Task<IResult> UploadAsync(
 		IFormFileCollection files,
+		[FromForm] string? country,
 		UploadBatch useCase,
 		IOptions<UploadOptions> options,
 		CancellationToken cancellationToken)
@@ -65,7 +66,7 @@ internal static class BatchEndpoints
 			uploads.Add(new UploadedFile(file.FileName, file.Length, buffer.ToArray()));
 		}
 
-		var result = await useCase.HandleAsync(uploads, cancellationToken);
+		var result = await useCase.HandleAsync(uploads, country, cancellationToken);
 		return result.ToHttp(response => response.BatchId is { } batchId
 			? Results.Accepted($"/v1/batches/{batchId}", response)
 			: Results.Ok(response));

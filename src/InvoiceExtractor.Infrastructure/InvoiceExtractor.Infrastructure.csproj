@@ -10,6 +10,8 @@
 		<PackageReference Include="EFCore.NamingConventions" />
 		<PackageReference Include="Microsoft.Extensions.Options.DataAnnotations" />
 		<PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />
+		<!-- BackgroundService, for the extraction worker. -->
+		<PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
 		<PackageReference Include="Anthropic" />
 		<PackageReference Include="PdfPig" />
 		<PackageReference Include="SkiaSharp" />

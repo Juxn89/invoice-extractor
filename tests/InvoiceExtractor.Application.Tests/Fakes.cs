@@ -91,3 +91,53 @@ internal static class Files
 
 	public static byte[] Png(string body) => [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, .. System.Text.Encoding.ASCII.GetBytes(body)];
 }
+
+internal sealed class FakeQueue : IDocumentQueue
+{
+	private readonly List<Extraction> _staged = [];
+
+	public Dictionary<BatchId, string> Countries { get; } = [];
+
+	public List<Extraction> Saved { get; } = [];
+
+	public int Saves { get; private set; }
+
+	public Task<Document?> ClaimNextAsync(DateTimeOffset now, DateTimeOffset leaseUntil, CancellationToken cancellationToken) =>
+		Task.FromResult<Document?>(null);
+
+	public Task<Document?> FindAsync(DocumentId id, CancellationToken cancellationToken) => Task.FromResult<Document?>(null);
+
+	public Task<string> CountryOfAsync(BatchId id, CancellationToken cancellationToken) => Task.FromResult(Countries[id]);
+
+	public Task<decimal> SpentSinceAsync(DateTimeOffset since, CancellationToken cancellationToken) => Task.FromResult(Saved.Sum(static e => e.CostUsd));
+
+	public void Add(Extraction extraction) => _staged.Add(extraction);
+
+	public Task SaveChangesAsync(CancellationToken cancellationToken)
+	{
+		Saves++;
+		Saved.AddRange(_staged);
+		_staged.Clear();
+		return Task.CompletedTask;
+	}
+}
+
+internal sealed class FakePreprocessor : IDocumentPreprocessor
+{
+	public PreparedDocument Prepare(ReadOnlyMemory<byte> content, DocumentFormat format, bool hasTextLayer) =>
+		new PreparedImage(content, 10, 10);
+}
+
+internal sealed class FakeExtractor : IInvoiceExtractor
+{
+	public static ExtractionUsage Usage { get; } = new("claude-haiku-5-5", 2000, 300, 0.00035m);
+
+	public InvoiceExtractionResult? Next { get; set; }
+
+	public Exception? Throw { get; set; }
+
+	public bool IsConfigured => true;
+
+	public Task<InvoiceExtractionResult> ExtractAsync(PreparedDocument document, CancellationToken cancellationToken) =>
+		Throw is not null ? Task.FromException<InvoiceExtractionResult>(Throw) : Task.FromResult(Next!);
+}

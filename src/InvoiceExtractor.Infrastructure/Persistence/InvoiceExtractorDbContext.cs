@@ -14,6 +14,9 @@ public sealed class InvoiceExtractorDbContext(DbContextOptions<InvoiceExtractorD
 	/// <summary>Uploaded files.</summary>
 	public DbSet<Document> Documents => Set<Document>();
 
+	/// <summary>Model calls and what came of them.</summary>
+	public DbSet<Extraction> Extractions => Set<Extraction>();
+
 	/// <inheritdoc />
 	protected override void OnModelCreating(ModelBuilder modelBuilder)
 	{
@@ -27,6 +30,7 @@ public sealed class InvoiceExtractorDbContext(DbContextOptions<InvoiceExtractorD
 		ArgumentNullException.ThrowIfNull(configurationBuilder);
 		configurationBuilder.Properties<BatchId>().HaveConversion<BatchIdConverter>();
 		configurationBuilder.Properties<DocumentId>().HaveConversion<DocumentIdConverter>();
+		configurationBuilder.Properties<ExtractionId>().HaveConversion<ExtractionIdConverter>();
 		configurationBuilder.Properties<ContentHash>().HaveConversion<ContentHashConverter>();
 	}
 }
@@ -43,6 +47,8 @@ internal static class PersistenceSetup
 internal sealed class BatchIdConverter() : ValueConverter<BatchId, Guid>(id => id.Value, value => new BatchId(value));
 
 internal sealed class DocumentIdConverter() : ValueConverter<DocumentId, Guid>(id => id.Value, value => new DocumentId(value));
+
+internal sealed class ExtractionIdConverter() : ValueConverter<ExtractionId, Guid>(id => id.Value, value => new ExtractionId(value));
 
 internal sealed class ContentHashConverter()
 	: ValueConverter<ContentHash, string>(hash => hash.Value, value => ContentHash.FromHex(value));

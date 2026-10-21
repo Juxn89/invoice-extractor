@@ -22,4 +22,12 @@ public sealed class UploadOptions
 	/// </summary>
 	[Range(1, 100)]
 	public int MaxPdfPages { get; set; } = 5;
+
+	/// <summary>
+	/// The country a batch uploaded without one is validated as. A small business invoices in one country, so
+	/// a deployment sets its own; Nicaragua is the default because the demo's samples start there.
+	/// </summary>
+	[Required]
+	[StringLength(2, MinimumLength = 2)]
+	public string DefaultCountry { get; set; } = "NI";
 }

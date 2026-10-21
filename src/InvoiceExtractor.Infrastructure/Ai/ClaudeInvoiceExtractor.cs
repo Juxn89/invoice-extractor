@@ -6,6 +6,7 @@ using System.Text.Json;
 using Anthropic;
 using Anthropic.Models.Messages;
 using InvoiceExtractor.Application.Abstractions;
+using InvoiceExtractor.Domain.Invoices;
 using Microsoft.Extensions.Options;
 
 /// <summary>The model and what it costs, bound from the <c>Anthropic</c> section.</summary>
@@ -70,6 +71,8 @@ internal sealed class ClaudeInvoiceExtractor(IOptions<AnthropicOptions> options)
 			: throw new InvalidOperationException("Anthropic:ApiKey is not set; extraction needs an API key."),
 		Timeout = options.Value.Timeout,
 	});
+
+	public bool IsConfigured => !string.IsNullOrWhiteSpace(options.Value.ApiKey);
 
 	public async Task<InvoiceExtractionResult> ExtractAsync(PreparedDocument document, CancellationToken cancellationToken)
 	{
