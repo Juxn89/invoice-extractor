@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<RootNamespace>InvoiceExtractor.Domain.Tests</RootNamespace>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\..\src\InvoiceExtractor.Domain\InvoiceExtractor.Domain.csproj" />
+	</ItemGroup>
+</Project>

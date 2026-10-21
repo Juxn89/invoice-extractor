@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<!-- Plain C#: no package references, by rule (AGENTS.md). -->
+	<PropertyGroup>
+		<RootNamespace>InvoiceExtractor.Domain</RootNamespace>
+	</PropertyGroup>
+</Project>

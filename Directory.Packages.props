@@ -1,0 +1,23 @@
+<Project>
+	<!--
+		Central Package Management. Project files reference packages WITHOUT a Version attribute.
+		Rule: the newest version that is at least two weeks old on the day it is added. Verified against
+		api.nuget.org on 21 Oct 2026; later groups (AI, documents, persistence, Aspire) are added on the day
+		they are first needed, with that day's verification.
+	-->
+	<PropertyGroup>
+		<ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+		<CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
+	</PropertyGroup>
+
+	<!--
+		xUnit stays on the v2 line, as in docs-assistant: TngTech.ArchUnitNET.xUnit depends on xunit.assert
+		2.x, and xunit.runner.visualstudio 3.1.5 is the last v2-compatible runner (4.x is v3-only).
+		Microsoft.NET.Test.Sdk 18.11.0 was 8 days old, so 18.10.1 (15 Sep 2026).
+	-->
+	<ItemGroup Label="Testing">
+		<PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.10.1" />
+		<PackageVersion Include="xunit" Version="2.9.3" />
+		<PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
+	</ItemGroup>
+</Project>

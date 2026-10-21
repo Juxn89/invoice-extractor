@@ -1,0 +1,27 @@
+name: AI review
+
+# Reviewed by my own bot (github.com/Juxn89/claude-pr-review-bot): one review per PR, comments only,
+# it can never approve or block. Without the ANTHROPIC_API_KEY secret it runs in dry-run mode.
+on:
+  pull_request:
+    types: [opened, synchronize, ready_for_review]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  review:
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    steps:
+      - uses: Juxn89/claude-pr-review-bot@v1
+        with:
+          anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
+          model: claude-haiku-5-5
+          ignore-globs: "**/Migrations/**, evals/dataset/**"
+          project-context: >-
+            Invoice and receipt extraction on .NET 10 / C# 14. Clean Architecture: Domain has no
+            dependencies. Amounts are decimal, never double. The model proposes and the domain decides:
+            a failed validation rule sends a document to human review, it never rejects it. No magic
+            strings or numbers. Tabs for indentation.
