@@ -1,6 +1,7 @@
 namespace InvoiceExtractor.Application.Abstractions;
 
 using InvoiceExtractor.Domain.Invoices;
+using InvoiceExtractor.Domain.Validation;
 
 /// <summary>What one model call cost.</summary>
 /// <param name="Model">The model id.</param>
@@ -34,7 +35,11 @@ public interface IInvoiceExtractor
 
 	/// <summary>Reads one prepared document.</summary>
 	/// <param name="document">Text, a PDF or an image (see <see cref="IDocumentPreprocessor"/>).</param>
+	/// <param name="feedback">
+	/// On a retry, the checks the previous reading failed, for the model to look at those fields again.
+	/// Empty on a first reading.
+	/// </param>
 	/// <param name="cancellationToken">Cancellation.</param>
 	/// <returns>The extraction, with its cost.</returns>
-	Task<InvoiceExtractionResult> ExtractAsync(PreparedDocument document, CancellationToken cancellationToken);
+	Task<InvoiceExtractionResult> ExtractAsync(PreparedDocument document, IReadOnlyList<ValidationIssue> feedback, CancellationToken cancellationToken);
 }

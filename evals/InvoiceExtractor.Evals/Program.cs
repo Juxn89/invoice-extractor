@@ -41,7 +41,7 @@ static int Usage()
 		usage:
 		  evals generate
 		  evals run oracle [--set hard]
-		  evals run claude --allow-paid [--set hard] [--limit N] [--max-calls N] [--max-cost USD]
+		  evals run claude --allow-paid [--set hard] [--limit N | --only id,id] [--max-calls N] [--max-cost USD]
 		""");
 	return 2;
 }
@@ -95,7 +95,9 @@ static async Task<int> RunPaidAsync(string root, string[] args, bool hard)
 		return 2;
 	}
 
-	var limit = args.Contains("--limit") ? (int)Option(args, "--limit", 0m) : (int?)null;
+	var limit = args.Contains("--limit") ? (int)Option(args, "--limit", 0m)
+		: Text(args, "--only") is { } only ? only.Split(',').Length
+		: (int?)null;
 	var guard = new SpendingGuard((int)Option(args, "--max-calls", DefaultMaxCalls), maxCost);
 	var options = new AnthropicOptions { ApiKey = apiKey };
 	Console.WriteLine(string.Create(CultureInfo.InvariantCulture, $"{options.Model}: up to {maxCost:F4} USD ({remaining:F4} left in {ledger.Session})"));
@@ -132,43 +134,56 @@ static async Task<int> RunAsync(string root, IDocumentExtractor extractor, int? 
 {
 	var dataset = Path.Combine(root, hard ? HardDatasetFolder : DatasetFolder);
 	var manifest = DatasetJson.Read(dataset);
-	var entries = limit is { } n ? manifest.Documents.Take(n).ToList() : manifest.Documents;
-	var scores = new List<DocumentScore>(entries.Count);
+	var only = Text(Environment.GetCommandLineArgs(), "--only")?.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+	var entries = only is not null
+		? [.. manifest.Documents.Where(e => only.Contains(e.Id))]
+		: limit is { } n ? manifest.Documents.Take(n).ToList() : manifest.Documents;
+	limit ??= only?.Length;
+	var first = new List<DocumentScore>(entries.Count);
+	var final = new List<DocumentScore>(entries.Count);
 	foreach (var entry in entries)
 	{
-		var attempt = await extractor.ExtractAsync(entry, Path.Combine(dataset, entry.File), CancellationToken.None).ConfigureAwait(false);
-		var score = EvalScorer.Score(entry, attempt, manifest.AsOf);
-		scores.Add(score);
+		var run = await extractor.ExtractAsync(entry, Path.Combine(dataset, entry.File), CancellationToken.None).ConfigureAwait(false);
+		first.Add(EvalScorer.Score(entry, run.First, manifest.AsOf));
+		final.Add(EvalScorer.Score(entry, run.Final, manifest.AsOf));
 		if (guard is not null)
 		{
-			Console.WriteLine(Line(score));
+			Console.WriteLine(Line(final[^1]) + (run.Retried ? $"  (retried; first: {Verdict(first[^1])})" : string.Empty));
 		}
 	}
 
-	var report = EvalScorer.Aggregate(extractor.Name, scores);
-
-	// Only a full run is a result worth versioning; a smoke run is printed and forgotten.
-	if (limit is null)
+	// The first reading alone is the configuration without retry; with a pipeline that retries, the final
+	// verdict is the configuration with it. The thresholds apply to what the app ships: the final one.
+	var suffix = hard ? "-" + HardSet : string.Empty;
+	var reports = new List<(string File, EvalReport Report)> { ($"{extractor.Name}{suffix}.json", EvalScorer.Aggregate(extractor.Name, first)) };
+	if (extractor.Retries)
 	{
-		var results = Path.Combine(root, ResultsFolder);
-		Directory.CreateDirectory(results);
-		await File.WriteAllTextAsync(
-			Path.Combine(results, $"{extractor.Name}{(hard ? "-" + HardSet : string.Empty)}.json"),
-			JsonSerializer.Serialize(report, DatasetJson.Options)).ConfigureAwait(false);
+		reports.Add(($"{extractor.Name}-retry{suffix}.json", EvalScorer.Aggregate($"{extractor.Name} + retry", final)));
 	}
 
-	Console.WriteLine(string.Create(
-		CultureInfo.InvariantCulture,
-		$"""
-		{report.Extractor}{(hard ? " (hard set)" : string.Empty)}: {report.Documents} documents
-		  key fields  total {report.TotalAccuracy:0.000}  date {report.DateAccuracy:0.000}  tax id {report.TaxIdAccuracy:0.000}  number {report.NumberAccuracy:0.000}
-		  line F1     {report.LineF1:0.000}
-		  approved    {report.AutoApproved} (precision {report.AutoApprovedPrecision:0.000}, {report.FalseAutoApproved} false)
-		  planted     {report.PlantedSentToReview}/{report.Planted} sent to review
-		  cost        USD {report.TotalCostUsd:0.000000} ({report.CostPerDocumentUsd:0.000000} per document)
-		"""));
+	foreach (var (file, report) in reports)
+	{
+		// Only a full run is a result worth versioning; a smoke run is printed and forgotten.
+		if (limit is null)
+		{
+			var results = Path.Combine(root, ResultsFolder);
+			Directory.CreateDirectory(results);
+			await File.WriteAllTextAsync(Path.Combine(results, file), JsonSerializer.Serialize(report, DatasetJson.Options)).ConfigureAwait(false);
+		}
 
-	var failures = Thresholds.Read(Path.Combine(root, ThresholdsFile)).Failures(report);
+		Console.WriteLine(string.Create(
+			CultureInfo.InvariantCulture,
+			$"""
+			{report.Extractor}{(hard ? " (hard set)" : string.Empty)}: {report.Documents} documents
+			  key fields  total {report.TotalAccuracy:0.000}  date {report.DateAccuracy:0.000}  tax id {report.TaxIdAccuracy:0.000}  number {report.NumberAccuracy:0.000}
+			  line F1     {report.LineF1:0.000}
+			  approved    {report.AutoApproved} (precision {report.AutoApprovedPrecision:0.000}, {report.FalseAutoApproved} false)
+			  planted     {report.PlantedSentToReview}/{report.Planted} sent to review
+			  cost        USD {report.TotalCostUsd:0.000000} ({report.CostPerDocumentUsd:0.000000} per document)
+			"""));
+	}
+
+	var failures = Thresholds.Read(Path.Combine(root, ThresholdsFile)).Failures(reports[^1].Report);
 	foreach (var failure in failures)
 	{
 		Console.Error.WriteLine($"FAIL {failure}");
@@ -176,6 +191,8 @@ static async Task<int> RunAsync(string root, IDocumentExtractor extractor, int? 
 
 	return failures.Count == 0 ? 0 : 1;
 }
+
+static string Verdict(DocumentScore s) => s.AutoApproved ? "approved" : "review";
 
 static string Line(DocumentScore s) => string.Create(
 	CultureInfo.InvariantCulture,

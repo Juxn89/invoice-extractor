@@ -26,6 +26,10 @@ public sealed partial class NicaraguaTaxProfile : RateListTaxProfile
 	public override string CountryCode => Code;
 
 	/// <inheritdoc />
+	public override string TaxIdFormat =>
+		"a RUC is J followed by 13 digits (a company), or 13 digits followed by a letter (a person)";
+
+	/// <inheritdoc />
 	public override bool IsValidTaxId(string taxId) => RucFormat().IsMatch(TaxId.Normalize(taxId));
 
 	[GeneratedRegex(@"^(J\d{13}|\d{13}[A-Z])$", RegexOptions.CultureInvariant)]

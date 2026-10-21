@@ -37,6 +37,9 @@ public abstract class RateListTaxProfile : ITaxProfile
 	/// <inheritdoc />
 	public abstract string CountryCode { get; }
 
+	/// <inheritdoc />
+	public abstract string TaxIdFormat { get; }
+
 	/// <summary>The configured rates.</summary>
 	public IReadOnlyList<decimal> Rates => rates;
 

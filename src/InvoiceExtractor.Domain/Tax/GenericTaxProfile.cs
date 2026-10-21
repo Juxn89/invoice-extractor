@@ -26,6 +26,9 @@ public sealed partial class GenericTaxProfile : ITaxProfile
 	/// <inheritdoc />
 	public bool IsValidTaxId(string taxId) => AnyTaxId().IsMatch(TaxId.Normalize(taxId));
 
+	/// <inheritdoc />
+	public string TaxIdFormat => "3 to 20 letters or digits, at least one of them a digit";
+
 	// 3 to 20 letters or digits covers the national formats seen in practice, from short European VAT
 	// suffixes to 20-character ids. At least one digit, because every national format has digits: without
 	// it, a field that read as words ("NOT A TAX ID" once spaces are dropped) would pass.

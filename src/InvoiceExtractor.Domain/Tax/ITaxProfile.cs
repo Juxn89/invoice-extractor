@@ -18,4 +18,10 @@ public interface ITaxProfile
 	/// <param name="taxId">The id as printed; the profile normalises separators and case itself.</param>
 	/// <returns><see langword="true"/> when the format matches.</returns>
 	bool IsValidTaxId(string taxId);
+
+	/// <summary>
+	/// The tax id's shape in words, for the reviewer and for the model's second look: a misread character can
+	/// only be found by someone who knows which position must be a letter and which a digit.
+	/// </summary>
+	string TaxIdFormat { get; }
 }

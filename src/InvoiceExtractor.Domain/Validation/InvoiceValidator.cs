@@ -142,7 +142,7 @@ public static class InvoiceValidator
 		issues.Add(new(
 			InvoiceFields.IssuerTaxId,
 			IssueCode.InvalidTaxId,
-			Describe($"\"{invoice.IssuerTaxId}\" does not have the format of a {profile.CountryCode} tax id.")));
+			Describe($"\"{invoice.IssuerTaxId}\" does not have the format of a {profile.CountryCode} tax id: {profile.TaxIdFormat}.")));
 	}
 
 	private static void CheckDate(ExtractedInvoice invoice, DateOnly today, List<ValidationIssue> issues)

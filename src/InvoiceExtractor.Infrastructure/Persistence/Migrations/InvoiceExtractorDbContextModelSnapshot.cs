@@ -176,6 +176,10 @@ namespace InvoiceExtractor.Infrastructure.Persistence.Migrations
                         .HasColumnType("jsonb")
                         .HasColumnName("invoice");
 
+                    b.Property<bool>("IsRetry")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_retry");
+
                     b.Property<string>("Issues")
                         .IsRequired()
                         .HasColumnType("jsonb")

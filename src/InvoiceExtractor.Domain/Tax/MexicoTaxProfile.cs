@@ -30,6 +30,10 @@ public sealed partial class MexicoTaxProfile : RateListTaxProfile
 	public override string CountryCode => Code;
 
 	/// <inheritdoc />
+	public override string TaxIdFormat =>
+		"an RFC is 3 letters (a company) or 4 letters (a person), then a 6-digit date YYMMDD, then 3 letters or digits";
+
+	/// <inheritdoc />
 	public override bool IsValidTaxId(string taxId)
 	{
 		var match = RfcFormat().Match(TaxId.Normalize(taxId));

@@ -53,6 +53,7 @@ public static class DependencyInjection
 		services.AddScoped<UploadBatch>();
 		services.AddScoped<GetDocument>();
 		services.AddScoped<GetBatch>();
+		services.AddSingleton<ExtractionPipeline>();
 		services.AddScoped<ProcessDocument>();
 
 		services.AddSingleton<ExtractionWorker>();

@@ -128,16 +128,27 @@ internal sealed class FakePreprocessor : IDocumentPreprocessor
 		new PreparedImage(content, 10, 10);
 }
 
+/// <summary>Answers each call with the next response in line (the last one repeats), recording the feedback it got.</summary>
 internal sealed class FakeExtractor : IInvoiceExtractor
 {
 	public static ExtractionUsage Usage { get; } = new("claude-haiku-5-5", 2000, 300, 0.00035m);
 
-	public InvoiceExtractionResult? Next { get; set; }
+	public List<InvoiceExtractionResult> Responses { get; } = [];
+
+	public List<IReadOnlyList<Domain.Validation.ValidationIssue>> Feedback { get; } = [];
 
 	public Exception? Throw { get; set; }
 
 	public bool IsConfigured => true;
 
-	public Task<InvoiceExtractionResult> ExtractAsync(PreparedDocument document, CancellationToken cancellationToken) =>
-		Throw is not null ? Task.FromException<InvoiceExtractionResult>(Throw) : Task.FromResult(Next!);
+	public Task<InvoiceExtractionResult> ExtractAsync(PreparedDocument document, IReadOnlyList<Domain.Validation.ValidationIssue> feedback, CancellationToken cancellationToken)
+	{
+		if (Throw is not null)
+		{
+			return Task.FromException<InvoiceExtractionResult>(Throw);
+		}
+
+		Feedback.Add(feedback);
+		return Task.FromResult(Responses[Math.Min(Feedback.Count, Responses.Count) - 1]);
+	}
 }

@@ -47,6 +47,9 @@ public sealed class Extraction
 	/// <summary>Why nothing usable came back, when it did not.</summary>
 	public string? Failure { get; private set; }
 
+	/// <summary>Whether this was the second reading, made with the first one's failed checks as feedback.</summary>
+	public bool IsRetry { get; private set; }
+
 	/// <summary>Billed input tokens.</summary>
 	public long InputTokens { get; private set; }
 
@@ -66,6 +69,7 @@ public sealed class Extraction
 	/// <param name="confidence">The model's confidence per key field.</param>
 	/// <param name="issues">The rules the reading broke.</param>
 	/// <param name="failure">Why nothing usable came back.</param>
+	/// <param name="isRetry">Whether it was the retry with feedback.</param>
 	/// <param name="inputTokens">Billed input tokens.</param>
 	/// <param name="outputTokens">Billed output tokens.</param>
 	/// <param name="costUsd">The call's cost.</param>
@@ -78,6 +82,7 @@ public sealed class Extraction
 		IReadOnlyDictionary<string, FieldConfidence> confidence,
 		IReadOnlyList<ValidationIssue> issues,
 		string? failure,
+		bool isRetry,
 		long inputTokens,
 		long outputTokens,
 		decimal costUsd,
@@ -101,6 +106,7 @@ public sealed class Extraction
 			Confidence = confidence,
 			Issues = issues,
 			Failure = failure is { Length: > FailureMaxLength } ? failure[..FailureMaxLength] : failure,
+			IsRetry = isRetry,
 			InputTokens = inputTokens,
 			OutputTokens = outputTokens,
 			CostUsd = costUsd,

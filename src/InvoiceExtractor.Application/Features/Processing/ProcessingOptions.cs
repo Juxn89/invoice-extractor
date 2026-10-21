@@ -40,6 +40,12 @@ public sealed class ProcessingOptions
 	/// </summary>
 	[Range(typeof(decimal), "0", "1000")]
 	public decimal DailyBudgetUsd { get; set; } = 1.00m;
+
+	/// <summary>
+	/// Read once more, with the failed checks as feedback, when a reading breaks a rule. Costs a second call on
+	/// those documents only; whether it pays for itself is measured in evals/README.md.
+	/// </summary>
+	public bool RetryOnFailedRules { get; set; } = true;
 }
 
 /// <summary>

@@ -16,7 +16,9 @@ So far:
   photo as an upright JPEG no larger than the model uses (SkiaSharp, EXIF orientation applied).
 - **Processing:** a queue in Postgres (`FOR UPDATE SKIP LOCKED` with a lease, see
   [ADR 0003](docs/adr/0003-queue-in-postgres.md)) feeds workers that read each document with Claude Haiku 5.5,
-  validate it with the batch's country rules and approve it or send it to review. Every call's cost is
+  validate it with the batch's country rules and approve it or send it to review. A reading that breaks a
+  rule is read once more with the failed checks as feedback
+  ([ADR 0002](docs/adr/0002-retry-with-validation-feedback.md)). Every call's cost is
   recorded, and a daily budget stops the workers when it is spent.
 - **Evals:** a synthetic dataset of 30 invoices and receipts with planted errors, and the scorer every
   extractor will be measured with. See [`evals/README.md`](evals/README.md).

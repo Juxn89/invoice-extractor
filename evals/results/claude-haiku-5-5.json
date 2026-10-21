@@ -11,8 +11,8 @@
   "falseAutoApproved": 0,
   "plantedSentToReview": 5,
   "planted": 5,
-  "totalCostUsd": 0.0152701,
-  "costPerDocumentUsd": 0.000509,
+  "totalCostUsd": 0.0157506,
+  "costPerDocumentUsd": 0.000525,
   "scores": [
     {
       "id": "ni-01",
@@ -49,7 +49,7 @@
           "detail": "Lines add up to 6286.83, the subtotal reads 2686.83."
         }
       ],
-      "costUsd": 0.0007486,
+      "costUsd": 0.0006966,
       "error": null,
       "keyFieldsCorrect": true,
       "falselyAutoApproved": false
@@ -245,7 +245,7 @@
         {
           "field": "issuerTaxId",
           "code": "InvalidTaxId",
-          "detail": "\u0022CMI050101AB\u0022 does not have the format of a MX tax id."
+          "detail": "\u0022CMI050101AB\u0022 does not have the format of a MX tax id: an RFC is 3 letters (a company) or 4 letters (a person), then a 6-digit date YYMMDD, then 3 letters or digits."
         }
       ],
       "costUsd": 0.0003625,
@@ -265,7 +265,7 @@
       "autoApproved": true,
       "shouldReview": false,
       "issues": [],
-      "costUsd": 0.0004674,
+      "costUsd": 0.0004689,
       "error": null,
       "keyFieldsCorrect": true,
       "falselyAutoApproved": false
@@ -282,7 +282,7 @@
       "autoApproved": true,
       "shouldReview": false,
       "issues": [],
-      "costUsd": 0.0003394,
+      "costUsd": 0.0003389,
       "error": null,
       "keyFieldsCorrect": true,
       "falselyAutoApproved": false
@@ -322,7 +322,7 @@
           "detail": "Line 1: 1 \u00D7 51.31 is 51.31, the line total reads 52.31."
         }
       ],
-      "costUsd": 0.0006646,
+      "costUsd": 0.0005426,
       "error": null,
       "keyFieldsCorrect": true,
       "falselyAutoApproved": false
@@ -390,7 +390,7 @@
       "autoApproved": true,
       "shouldReview": false,
       "issues": [],
-      "costUsd": 0.0006259,
+      "costUsd": 0.0014144,
       "error": null,
       "keyFieldsCorrect": true,
       "falselyAutoApproved": false
@@ -424,7 +424,7 @@
       "autoApproved": true,
       "shouldReview": false,
       "issues": [],
-      "costUsd": 0.0005061,
+      "costUsd": 0.0003701,
       "error": null,
       "keyFieldsCorrect": true,
       "falselyAutoApproved": false
@@ -492,7 +492,7 @@
       "autoApproved": true,
       "shouldReview": false,
       "issues": [],
-      "costUsd": 0.0006032,
+      "costUsd": 0.0006042,
       "error": null,
       "keyFieldsCorrect": true,
       "falselyAutoApproved": false

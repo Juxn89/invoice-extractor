@@ -11,8 +11,8 @@
   "falseAutoApproved": 0,
   "plantedSentToReview": 2,
   "planted": 2,
-  "totalCostUsd": 0.0078162,
-  "costPerDocumentUsd": 0.000651,
+  "totalCostUsd": 0.0081782,
+  "costPerDocumentUsd": 0.000682,
   "scores": [
     {
       "id": "ni-h01",
@@ -26,7 +26,7 @@
       "autoApproved": true,
       "shouldReview": false,
       "issues": [],
-      "costUsd": 0.0006993,
+      "costUsd": 0.0006938,
       "error": null,
       "keyFieldsCorrect": true,
       "falselyAutoApproved": false
@@ -49,7 +49,7 @@
           "detail": "Line 2: 1 \u00D7 56.98 is 56.98, the line total reads 85.47."
         }
       ],
-      "costUsd": 0.0008036,
+      "costUsd": 0.0012121,
       "error": null,
       "keyFieldsCorrect": true,
       "falselyAutoApproved": false
@@ -89,7 +89,7 @@
           "detail": "Lines add up to 15598.16, the subtotal reads 51598.16."
         }
       ],
-      "costUsd": 0.0007516,
+      "costUsd": 0.0008461,
       "error": null,
       "keyFieldsCorrect": true,
       "falselyAutoApproved": false
@@ -112,7 +112,7 @@
           "detail": "Subtotal 1574.33 plus tax 251.89 is 1826.22, the total reads 1836.22."
         }
       ],
-      "costUsd": 0.0008283,
+      "costUsd": 0.0008163,
       "error": null,
       "keyFieldsCorrect": true,
       "falselyAutoApproved": false
@@ -129,7 +129,7 @@
       "autoApproved": true,
       "shouldReview": false,
       "issues": [],
-      "costUsd": 0.0008496,
+      "costUsd": 0.0008306,
       "error": null,
       "keyFieldsCorrect": true,
       "falselyAutoApproved": false
@@ -149,10 +149,10 @@
         {
           "field": "issuerTaxId",
           "code": "InvalidTaxId",
-          "detail": "\u0022TN0120604KJ8\u0022 does not have the format of a MX tax id."
+          "detail": "\u0022TN0120604KJ8\u0022 does not have the format of a MX tax id: an RFC is 3 letters (a company) or 4 letters (a person), then a 6-digit date YYMMDD, then 3 letters or digits."
         }
       ],
-      "costUsd": 0.0005396,
+      "costUsd": 0.0005326,
       "error": null,
       "keyFieldsCorrect": false,
       "falselyAutoApproved": false
@@ -169,7 +169,7 @@
       "autoApproved": true,
       "shouldReview": false,
       "issues": [],
-      "costUsd": 0.0006121,
+      "costUsd": 0.0004621,
       "error": null,
       "keyFieldsCorrect": true,
       "falselyAutoApproved": false
@@ -186,7 +186,7 @@
       "autoApproved": true,
       "shouldReview": false,
       "issues": [],
-      "costUsd": 0.0006751,
+      "costUsd": 0.0006906,
       "error": null,
       "keyFieldsCorrect": true,
       "falselyAutoApproved": false
@@ -203,7 +203,7 @@
       "autoApproved": true,
       "shouldReview": false,
       "issues": [],
-      "costUsd": 0.0007718,
+      "costUsd": 0.0007938,
       "error": null,
       "keyFieldsCorrect": true,
       "falselyAutoApproved": false
@@ -220,7 +220,7 @@
       "autoApproved": true,
       "shouldReview": false,
       "issues": [],
-      "costUsd": 0.0005821,
+      "costUsd": 0.0005976,
       "error": null,
       "keyFieldsCorrect": true,
       "falselyAutoApproved": false
@@ -237,7 +237,7 @@
       "autoApproved": true,
       "shouldReview": false,
       "issues": [],
-      "costUsd": 0.000361,
+      "costUsd": 0.0003605,
       "error": null,
       "keyFieldsCorrect": true,
       "falselyAutoApproved": false

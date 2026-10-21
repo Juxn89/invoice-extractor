@@ -245,7 +245,7 @@
         {
           "field": "issuerTaxId",
           "code": "InvalidTaxId",
-          "detail": "\u0022CMI050101AB\u0022 does not have the format of a MX tax id."
+          "detail": "\u0022CMI050101AB\u0022 does not have the format of a MX tax id: an RFC is 3 letters (a company) or 4 letters (a person), then a 6-digit date YYMMDD, then 3 letters or digits."
         }
       ],
       "costUsd": 0,

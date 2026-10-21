@@ -1,6 +1,8 @@
 namespace InvoiceExtractor.Evals.Scoring;
 
 using System.Text.RegularExpressions;
+using InvoiceExtractor.Application.Features.Processing;
+using InvoiceExtractor.Domain.Documents;
 using InvoiceExtractor.Domain.Invoices;
 using InvoiceExtractor.Domain.Tax;
 using InvoiceExtractor.Domain.Validation;
@@ -16,7 +18,7 @@ using InvoiceExtractor.Evals.Extraction;
 /// <param name="ExpectedLines">Lines printed.</param>
 /// <param name="ExtractedLines">Lines read.</param>
 /// <param name="MatchedLines">Lines read with the right description and total.</param>
-/// <param name="AutoApproved">The extraction passed every rule.</param>
+/// <param name="AutoApproved">The app's verdict: every rule passed and no key field was marked low.</param>
 /// <param name="ShouldReview">The document is inconsistent on purpose.</param>
 /// <param name="Issues">The rules the extraction broke.</param>
 /// <param name="CostUsd">What the extraction cost.</param>
@@ -100,6 +102,7 @@ internal static partial class EvalScorer
 		}
 
 		var validation = InvoiceValidator.Validate(read, TaxProfiles.For(entry.Country), asOf);
+		var verdict = ReviewPolicy.Decide(read, validation.Issues, attempt.Confidence ?? new Dictionary<string, FieldConfidence>());
 		return new DocumentScore(
 			entry.Id,
 			TotalMatches: read.Total == expected.Total,
@@ -110,7 +113,7 @@ internal static partial class EvalScorer
 			ExpectedLines: expected.Lines.Count,
 			ExtractedLines: read.Lines.Count,
 			MatchedLines: MatchLines(expected.Lines, read.Lines),
-			AutoApproved: validation.IsValid,
+			AutoApproved: verdict == DocumentStatus.AutoApproved,
 			ShouldReview: shouldReview,
 			Issues: validation.Issues,
 			CostUsd: attempt.CostUsd,

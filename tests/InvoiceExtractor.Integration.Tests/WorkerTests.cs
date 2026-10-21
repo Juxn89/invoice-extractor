@@ -235,7 +235,7 @@ public sealed class WorkerTests(PostgresFixture fixture) : IAsyncLifetime
 
 		public bool IsConfigured => true;
 
-		public async Task<InvoiceExtractionResult> ExtractAsync(PreparedDocument document, CancellationToken cancellationToken)
+		public async Task<InvoiceExtractionResult> ExtractAsync(PreparedDocument document, IReadOnlyList<ValidationIssue> feedback, CancellationToken cancellationToken)
 		{
 			var key = Encoding.ASCII.GetString(((PreparedImage)document).Jpeg.Span);
 			CallsPerDocument.AddOrUpdate(key, 1, static (_, calls) => calls + 1);

@@ -7,6 +7,7 @@ using Anthropic;
 using Anthropic.Models.Messages;
 using InvoiceExtractor.Application.Abstractions;
 using InvoiceExtractor.Domain.Invoices;
+using InvoiceExtractor.Domain.Validation;
 using Microsoft.Extensions.Options;
 
 /// <summary>The model and what it costs, bound from the <c>Anthropic</c> section.</summary>
@@ -61,7 +62,10 @@ internal sealed class ClaudeInvoiceExtractor(IOptions<AnthropicOptions> options)
 	private const string Instruction = "Extract this document.";
 	private const decimal TokensPerMillion = 1_000_000m;
 
+	private const string IssuesPlaceholder = "{issues}";
+
 	private static readonly string SystemPrompt = PromptLibrary.Read("extract-invoice.md");
+	private static readonly string RetryPrompt = PromptLibrary.Read("retry-feedback.md");
 	private static readonly Dictionary<string, JsonElement> Schema = InvoiceExtractionSchema.AsDictionary();
 
 	private readonly Lazy<AnthropicClient> _client = new(() => new AnthropicClient
@@ -74,8 +78,9 @@ internal sealed class ClaudeInvoiceExtractor(IOptions<AnthropicOptions> options)
 
 	public bool IsConfigured => !string.IsNullOrWhiteSpace(options.Value.ApiKey);
 
-	public async Task<InvoiceExtractionResult> ExtractAsync(PreparedDocument document, CancellationToken cancellationToken)
+	public async Task<InvoiceExtractionResult> ExtractAsync(PreparedDocument document, IReadOnlyList<ValidationIssue> feedback, CancellationToken cancellationToken)
 	{
+		ArgumentNullException.ThrowIfNull(feedback);
 		var settings = options.Value;
 		var response = await _client.Value.Messages.Create(
 			new MessageCreateParams
@@ -89,7 +94,7 @@ internal sealed class ClaudeInvoiceExtractor(IOptions<AnthropicOptions> options)
 					Effort = settings.Effort,
 					Format = new JsonOutputFormat { Schema = Schema },
 				},
-				Messages = [new() { Role = Role.User, Content = Content(document) }],
+				Messages = [new() { Role = Role.User, Content = Content(document, feedback) }],
 			},
 			cancellationToken).ConfigureAwait(false);
 
@@ -148,7 +153,7 @@ internal sealed class ClaudeInvoiceExtractor(IOptions<AnthropicOptions> options)
 
 	// The document goes in a document or image block, never pasted into the instruction: the model sees it as
 	// material to read, which is the first line of defence against text in it posing as instructions.
-	private static List<ContentBlockParam> Content(PreparedDocument document)
+	private static List<ContentBlockParam> Content(PreparedDocument document, IReadOnlyList<ValidationIssue> feedback)
 	{
 		ContentBlockParam source = document switch
 		{
@@ -161,7 +166,17 @@ internal sealed class ClaudeInvoiceExtractor(IOptions<AnthropicOptions> options)
 			_ => throw new ArgumentOutOfRangeException(nameof(document), document.GetType().Name, "Unknown prepared document."),
 		};
 
-		return [source, new TextBlockParam { Text = Instruction }];
+		List<ContentBlockParam> content = [source, new TextBlockParam { Text = Instruction }];
+
+		// A retry is a fresh single-turn request, not a follow-up turn: the first answer's thinking blocks would
+		// have to be sent back untouched, and the checks' details already carry the values that were read.
+		if (feedback.Count > 0)
+		{
+			var issues = string.Join('\n', feedback.Select(static issue => $"- {issue.Detail}"));
+			content.Add(new TextBlockParam { Text = RetryPrompt.Replace(IssuesPlaceholder, issues, StringComparison.Ordinal) });
+		}
+
+		return content;
 	}
 
 	private static InvoiceExtractionResult Failed(ExtractionUsage usage, string failure) =>
