@@ -429,3 +429,8 @@ FodyWeavers.xsd
 
 # Uploaded documents in local runs (FileStore:RootPath).
 storage/
+
+# Local secrets (ANTHROPIC_API_KEY). Never committed; .env.template documents the variables.
+.env
+.env.*
+!.env.template

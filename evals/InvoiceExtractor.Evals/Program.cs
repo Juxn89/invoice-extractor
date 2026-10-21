@@ -3,7 +3,9 @@ using System.Text.Json;
 using InvoiceExtractor.Evals.Dataset;
 using InvoiceExtractor.Evals.Extraction;
 using InvoiceExtractor.Evals.Generation;
+using InvoiceExtractor.Evals.Paid;
 using InvoiceExtractor.Evals.Scoring;
+using InvoiceExtractor.Infrastructure.Ai;
 
 // Paths are relative to the repo root, found by walking up to the solution file, so the tool runs the
 // same from the root, from evals/ or from `dotnet run --project`.
@@ -12,20 +14,32 @@ const string DatasetFolder = "evals/dataset";
 const string SamplesFolder = "evals/samples";
 const string ResultsFolder = "evals/results";
 const string ThresholdsFile = "evals/thresholds.json";
+const string ApiKeyVariable = "ANTHROPIC_API_KEY";
+
+// A full run is 30 calls; the default leaves room for one more run without editing the command.
+const int DefaultMaxCalls = 40;
+const decimal DefaultMaxCostUsd = 0.10m;
 
 var root = FindRoot(Directory.GetCurrentDirectory());
 var command = args.Length > 0 ? args[0] : string.Empty;
+var extractorName = args.Length > 1 && !args[1].StartsWith("--", StringComparison.Ordinal) ? args[1] : "oracle";
 
 return command switch
 {
 	"generate" => Generate(root),
-	"run" => await RunAsync(root, args.Length > 1 ? args[1] : "oracle").ConfigureAwait(false),
+	"run" when extractorName == "oracle" => await RunAsync(root, new OracleExtractor(), limit: null, guard: null).ConfigureAwait(false),
+	"run" when extractorName == "claude" => await RunPaidAsync(root, args).ConfigureAwait(false),
 	_ => Usage(),
 };
 
 static int Usage()
 {
-	Console.Error.WriteLine("usage: evals generate | evals run [oracle]");
+	Console.Error.WriteLine("""
+		usage:
+		  evals generate
+		  evals run oracle
+		  evals run claude --allow-paid [--limit N] [--max-calls N] [--max-cost USD]
+		""");
 	return 2;
 }
 
@@ -51,29 +65,93 @@ static int Generate(string root)
 	}
 }
 
-static async Task<int> RunAsync(string root, string extractorName)
+// Calls the paid API only with --allow-paid, within the run's limits and what the shared ledger says is left,
+// and records the run in the ledger even when it stops halfway.
+static async Task<int> RunPaidAsync(string root, string[] args)
 {
-	IDocumentExtractor extractor = extractorName switch
+	if (!args.Contains("--allow-paid"))
 	{
-		"oracle" => new OracleExtractor(),
-		_ => throw new ArgumentException($"Unknown extractor '{extractorName}'.", nameof(extractorName)),
-	};
+		Console.Error.WriteLine("This run calls the Anthropic API and costs money. Add --allow-paid to proceed.");
+		return 2;
+	}
 
+	var apiKey = DotEnv.Read(root, ApiKeyVariable);
+	if (string.IsNullOrEmpty(apiKey))
+	{
+		Console.Error.WriteLine($"{ApiKeyVariable} is not set in .env or the environment.");
+		return 2;
+	}
+
+	var ledger = Ledger.Default;
+	var remaining = ledger.Remaining();
+	var maxCost = Math.Min(Option(args, "--max-cost", DefaultMaxCostUsd), remaining);
+	if (maxCost <= 0)
+	{
+		Console.Error.WriteLine($"Nothing left of the {ledger.SessionCapUsd} USD allocated to {ledger.Session}.");
+		return 2;
+	}
+
+	var limit = args.Contains("--limit") ? (int)Option(args, "--limit", 0m) : (int?)null;
+	var guard = new SpendingGuard((int)Option(args, "--max-calls", DefaultMaxCalls), maxCost);
+	var options = new AnthropicOptions { ApiKey = apiKey };
+	Console.WriteLine(string.Create(CultureInfo.InvariantCulture, $"{options.Model}: up to {maxCost:F4} USD ({remaining:F4} left in {ledger.Session})"));
+
+	var note = "completed";
+	try
+	{
+		using var extractor = new ClaudeExtractor(options, guard);
+		return await RunAsync(root, extractor, limit, guard).ConfigureAwait(false);
+	}
+	catch (BudgetExceededException exception)
+	{
+		note = $"stopped by the guard: {exception.Message}";
+		Console.Error.WriteLine(note);
+		return 1;
+	}
+	catch (Exception exception)
+	{
+		note = $"failed: {exception.GetType().Name}";
+		throw;
+	}
+	finally
+	{
+		if (guard.Calls > 0)
+		{
+			var experiment = limit is null ? "eval-full" : $"eval-smoke-{limit}";
+			ledger.Append(experiment, options.Model, guard, $"invoice-extractor evals, {note}; usage from each response");
+			Console.WriteLine(string.Create(CultureInfo.InvariantCulture, $"ledger: {guard.Calls} calls, {guard.CostUsd:F6} USD recorded"));
+		}
+	}
+}
+
+static async Task<int> RunAsync(string root, IDocumentExtractor extractor, int? limit, SpendingGuard? guard)
+{
 	var dataset = Path.Combine(root, DatasetFolder);
 	var manifest = DatasetJson.Read(dataset);
-	var scores = new List<DocumentScore>(manifest.Documents.Count);
-	foreach (var entry in manifest.Documents)
+	var entries = limit is { } n ? manifest.Documents.Take(n).ToList() : manifest.Documents;
+	var scores = new List<DocumentScore>(entries.Count);
+	foreach (var entry in entries)
 	{
 		var attempt = await extractor.ExtractAsync(entry, Path.Combine(dataset, entry.File), CancellationToken.None).ConfigureAwait(false);
-		scores.Add(EvalScorer.Score(entry, attempt, manifest.AsOf));
+		var score = EvalScorer.Score(entry, attempt, manifest.AsOf);
+		scores.Add(score);
+		if (guard is not null)
+		{
+			Console.WriteLine(Line(score));
+		}
 	}
 
 	var report = EvalScorer.Aggregate(extractor.Name, scores);
-	var results = Path.Combine(root, ResultsFolder);
-	Directory.CreateDirectory(results);
-	await File.WriteAllTextAsync(
-		Path.Combine(results, $"{extractor.Name}.json"),
-		JsonSerializer.Serialize(report, DatasetJson.Options)).ConfigureAwait(false);
+
+	// Only a full run is a result worth versioning; a smoke run is printed and forgotten.
+	if (limit is null)
+	{
+		var results = Path.Combine(root, ResultsFolder);
+		Directory.CreateDirectory(results);
+		await File.WriteAllTextAsync(
+			Path.Combine(results, $"{extractor.Name}.json"),
+			JsonSerializer.Serialize(report, DatasetJson.Options)).ConfigureAwait(false);
+	}
 
 	Console.WriteLine(string.Create(
 		CultureInfo.InvariantCulture,
@@ -93,6 +171,20 @@ static async Task<int> RunAsync(string root, string extractorName)
 	}
 
 	return failures.Count == 0 ? 0 : 1;
+}
+
+static string Line(DocumentScore s) => string.Create(
+	CultureInfo.InvariantCulture,
+	$"  {s.Id,-6} total {Mark(s.TotalMatches)} date {Mark(s.DateMatches)} id {Mark(s.TaxIdMatches)} no {Mark(s.NumberMatches)} lines {s.MatchedLines}/{s.ExpectedLines} {(s.AutoApproved ? "approved" : "review")} {s.CostUsd:F6}{(s.Error is null ? string.Empty : " ERROR " + s.Error)}{(s.Issues.Count == 0 ? string.Empty : " [" + string.Join(", ", s.Issues.Select(static i => i.Code)) + "]")}");
+
+static string Mark(bool ok) => ok ? "ok" : "--";
+
+static decimal Option(string[] args, string name, decimal fallback)
+{
+	var index = Array.IndexOf(args, name);
+	return index >= 0 && index + 1 < args.Length
+		? decimal.Parse(args[index + 1], NumberStyles.Float, CultureInfo.InvariantCulture)
+		: fallback;
 }
 
 static string FindRoot(string start)

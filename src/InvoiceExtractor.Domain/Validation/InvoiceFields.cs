@@ -26,6 +26,9 @@ public static class InvoiceFields
 	/// <summary>The amount payable.</summary>
 	public const string Total = "total";
 
+	/// <summary>The line items as a whole.</summary>
+	public const string Lines = "lines";
+
 	/// <summary>The line total of one line, zero-based.</summary>
 	/// <param name="index">The line's position.</param>
 	/// <returns>A path such as <c>lines[2].lineTotal</c>.</returns>

@@ -45,5 +45,31 @@ else is a bug in the dataset, the validator or the scorer. CI runs it on every p
 only its own).
 
 Results are written to `evals/results/<extractor>.json` and versioned, so a change in quality shows up in
-the diff. The Haiku extractor, without and with the retry, lands on day 4 of the plan. It calls the paid
-API, so it only runs by hand, behind a spending cap.
+the diff.
+
+## Claude Haiku 5.5
+
+```bash
+dotnet run --project evals/InvoiceExtractor.Evals -- run claude --allow-paid [--limit N] [--max-cost USD]
+```
+
+The paid run reads `ANTHROPIC_API_KEY` from the git-ignored `.env` (see `.env.template`) and drives the same
+classes the API uses: format detection, inspection, preprocessing and `ClaudeInvoiceExtractor`. Before each
+call, a guard refuses it if its worst case (estimated input plus the whole output cap) could take the run past
+`--max-calls` or `--max-cost`, itself capped by what is left of this project's allocation in the shared budget
+ledger (`~/.anthropic-budget/ledger.tsv`). The run is recorded in the ledger even when it stops halfway.
+Without `--allow-paid` it refuses to start.
+
+First run, 21 Oct 2026 (`claude-haiku-5-5`, adaptive thinking at `effort: low`, structured outputs):
+
+| Metric | Result | Pass mark |
+|---|---|---|
+| Key fields (total, date, tax id, number) | 1.000 each | ≥ 0.95 |
+| Line F1 | 1.000 | ≥ 0.90 |
+| Auto-approved / precision / false | 25 / 1.000 / 0 | ≥ 0.98, ≤ 1 |
+| Planted errors sent to review | 5 / 5 | |
+| Cost per document | USD 0.000509 (total 0.015270, 94,106 input and 11,719 output tokens) | ≤ USD 0.001 |
+
+A perfect score says the harness and the extractor work end to end. It also says this dataset is easy for
+the model: clean renders, legible print. It cannot yet tell the retry (day 6 of the plan) from no retry,
+and it has no scanned PDF. Harder documents are the next thing it needs.

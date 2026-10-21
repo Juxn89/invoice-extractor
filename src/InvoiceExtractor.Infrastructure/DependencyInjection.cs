@@ -3,6 +3,7 @@ namespace InvoiceExtractor.Infrastructure;
 using InvoiceExtractor.Application.Abstractions;
 using InvoiceExtractor.Application.Features.Documents;
 using InvoiceExtractor.Application.Features.Upload;
+using InvoiceExtractor.Infrastructure.Ai;
 using InvoiceExtractor.Infrastructure.Documents;
 using InvoiceExtractor.Infrastructure.Files;
 using InvoiceExtractor.Infrastructure.Persistence;
@@ -35,11 +36,13 @@ public static class DependencyInjection
 
 		AddOptions<UploadOptions>(services, configuration, UploadOptions.SectionName);
 		AddOptions<FileStoreOptions>(services, configuration, FileStoreOptions.SectionName);
+		AddOptions<AnthropicOptions>(services, configuration, AnthropicOptions.SectionName);
 
 		services.AddScoped<IDocumentRepository, DocumentRepository>();
 		services.AddSingleton<IFileStore, LocalFileStore>();
 		services.AddSingleton<IDocumentInspector, DocumentInspector>();
 		services.AddSingleton<IDocumentPreprocessor, DocumentPreprocessor>();
+		services.AddSingleton<IInvoiceExtractor, ClaudeInvoiceExtractor>();
 
 		services.AddScoped<UploadBatch>();
 		services.AddScoped<GetDocument>();

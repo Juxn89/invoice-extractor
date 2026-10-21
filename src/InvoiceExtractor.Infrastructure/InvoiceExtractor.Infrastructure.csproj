@@ -10,12 +10,19 @@
 		<PackageReference Include="EFCore.NamingConventions" />
 		<PackageReference Include="Microsoft.Extensions.Options.DataAnnotations" />
 		<PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />
+		<PackageReference Include="Anthropic" />
 		<PackageReference Include="PdfPig" />
 		<PackageReference Include="SkiaSharp" />
 		<PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" />
 	</ItemGroup>
 
 	<ItemGroup>
+		<EmbeddedResource Include="Ai\Prompts\*.md" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<InternalsVisibleTo Include="InvoiceExtractor.Integration.Tests" />
+		<!-- The evals drive the real preprocessor and extractor, not copies of them. -->
+		<InternalsVisibleTo Include="InvoiceExtractor.Evals" />
 	</ItemGroup>
 </Project>

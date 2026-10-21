@@ -33,6 +33,14 @@
 		<PackageVersion Include="EFCore.NamingConventions" Version="10.0.1" />
 	</ItemGroup>
 
+	<!--
+		Day 4 (21 Oct 2026). Official Anthropic SDK, MIT. 13.0.0 came out today and 12.55.0 on 14 Oct, so 12.54.0
+		(7 Oct, two weeks to the day). Structured outputs go through OutputConfig.Format, as in claude-pr-review-bot.
+	-->
+	<ItemGroup Label="AI">
+		<PackageVersion Include="Anthropic" Version="12.54.0" />
+	</ItemGroup>
+
 	<ItemGroup Label="Documents">
 		<PackageVersion Include="PdfPig" Version="0.1.16" />
 	</ItemGroup>

@@ -10,7 +10,8 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\..\src\InvoiceExtractor.Domain\InvoiceExtractor.Domain.csproj" />
+		<!-- Infrastructure brings the real preprocessor and extractor that the paid run scores. -->
+		<ProjectReference Include="..\..\src\InvoiceExtractor.Infrastructure\InvoiceExtractor.Infrastructure.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>
