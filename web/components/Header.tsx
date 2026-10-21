@@ -61,6 +61,7 @@ export function Header() {
 				<nav className="flex items-center gap-1">
 					{link("/", t.nav.upload)}
 					{link("/review", t.nav.review, pending)}
+					{link("/dashboard", t.nav.dashboard)}
 				</nav>
 
 				<div role="group" aria-label={t.nav.language} className="ml-auto flex rounded-md border border-line bg-card p-0.5 text-xs font-semibold">

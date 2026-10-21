@@ -14,6 +14,7 @@
 		<PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
 		<PackageReference Include="Anthropic" />
 		<PackageReference Include="PdfPig" />
+		<PackageReference Include="ClosedXML" />
 		<PackageReference Include="SkiaSharp" />
 		<PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" />
 	</ItemGroup>

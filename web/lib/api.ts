@@ -98,7 +98,24 @@ async function send<T>(path: string, init?: RequestInit): Promise<T> {
 	return (await response.json()) as T;
 }
 
+export type Dashboard = {
+	documents: number;
+	byStatus: Record<DocumentStatus, number>;
+	decided: number;
+	autoApprovedRate: number;
+	reviewRate: number;
+	modelCalls: number;
+	retries: number;
+	costUsd: number;
+	costPerDocumentUsd: number;
+	spentTodayUsd: number;
+	dailyBudgetUsd: number;
+};
+
 export const api = {
+	dashboard: () => send<Dashboard>("/dashboard"),
+	exportUrl: (format: "xlsx" | "csv", lang: string, batchId?: string) =>
+		`${base}/export?format=${format}&lang=${lang}${batchId ? `&batchId=${batchId}` : ""}`,
 	batches: () => send<BatchResponse[]>("/batches"),
 	upload: (files: File[], country: Country) => {
 		const form = new FormData();

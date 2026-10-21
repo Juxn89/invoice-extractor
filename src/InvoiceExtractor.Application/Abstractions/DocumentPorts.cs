@@ -2,6 +2,7 @@ namespace InvoiceExtractor.Application.Abstractions;
 
 using InvoiceExtractor.Application.Common;
 using InvoiceExtractor.Domain.Documents;
+using InvoiceExtractor.Domain.Invoices;
 
 /// <summary>Batches and documents in the database.</summary>
 public interface IDocumentRepository
@@ -54,6 +55,38 @@ public interface IDocumentRepository
 	/// <param name="cancellationToken">Cancellation.</param>
 	/// <returns>The extractions.</returns>
 	Task<IReadOnlyList<Extraction>> ListExtractionsAsync(DocumentId id, CancellationToken cancellationToken);
+
+	/// <summary>
+	/// The documents whose data is settled, approved by the rules or by a person, oldest first; of one batch
+	/// when <paramref name="batch"/> is given.
+	/// </summary>
+	/// <param name="batch">The batch, or <see langword="null"/> for all.</param>
+	/// <param name="cancellationToken">Cancellation.</param>
+	/// <returns>The documents.</returns>
+	Task<IReadOnlyList<Document>> ListApprovedAsync(BatchId? batch, CancellationToken cancellationToken);
+
+	/// <summary>The country each batch was uploaded with.</summary>
+	/// <param name="ids">The batches.</param>
+	/// <param name="cancellationToken">Cancellation.</param>
+	/// <returns>Country code by batch.</returns>
+	Task<IReadOnlyDictionary<BatchId, string>> CountriesOfAsync(IReadOnlyCollection<BatchId> ids, CancellationToken cancellationToken);
+
+	/// <summary>Each document's last reading that returned an invoice.</summary>
+	/// <param name="ids">The documents.</param>
+	/// <param name="cancellationToken">Cancellation.</param>
+	/// <returns>The reading by document; documents with none are absent.</returns>
+	Task<IReadOnlyDictionary<DocumentId, ExtractedInvoice>> FinalReadingsAsync(IReadOnlyCollection<DocumentId> ids, CancellationToken cancellationToken);
+
+	/// <summary>How many documents are in each status.</summary>
+	/// <param name="cancellationToken">Cancellation.</param>
+	/// <returns>The counts; statuses with none are absent.</returns>
+	Task<IReadOnlyDictionary<DocumentStatus, int>> CountByStatusAsync(CancellationToken cancellationToken);
+
+	/// <summary>Model calls since a moment (or ever), with how many were retries and what they cost.</summary>
+	/// <param name="since">The start, or <see langword="null"/> for all time.</param>
+	/// <param name="cancellationToken">Cancellation.</param>
+	/// <returns>The totals.</returns>
+	Task<ExtractionTotals> ExtractionTotalsAsync(DateTimeOffset? since, CancellationToken cancellationToken);
 
 	/// <summary>One document, tracked, to change it.</summary>
 	/// <param name="id">Its id.</param>
@@ -136,4 +169,61 @@ public interface IDocumentPreprocessor
 	/// <param name="hasTextLayer">Whether the PDF has a text layer.</param>
 	/// <returns>The model's input.</returns>
 	PreparedDocument Prepare(ReadOnlyMemory<byte> content, DocumentFormat format, bool hasTextLayer);
+}
+
+/// <summary>Model calls added up.</summary>
+/// <param name="Calls">Calls made.</param>
+/// <param name="Retries">How many of them were retries with feedback.</param>
+/// <param name="Documents">Distinct documents they were made on.</param>
+/// <param name="CostUsd">What they cost.</param>
+public sealed record ExtractionTotals(int Calls, int Retries, int Documents, decimal CostUsd);
+
+/// <summary>The language the export's headers are written in.</summary>
+public enum ExportLanguage
+{
+	/// <summary>Spanish.</summary>
+	Es = 1,
+
+	/// <summary>English.</summary>
+	En = 2,
+}
+
+/// <summary>A file format the accounting export writes.</summary>
+public enum ExportFormat
+{
+	/// <summary>An Excel workbook.</summary>
+	Xlsx = 1,
+
+	/// <summary>Comma-separated values, UTF-8.</summary>
+	Csv = 2,
+}
+
+/// <summary>One invoice ready to book: the settled data and where it came from.</summary>
+/// <param name="DocumentId">The document.</param>
+/// <param name="FileName">The user's file name.</param>
+/// <param name="Country">The batch's tax profile.</param>
+/// <param name="ApprovedBy">Who settled it: the rules alone, or a person.</param>
+/// <param name="Invoice">The data.</param>
+public sealed record ExportRow(Guid DocumentId, string FileName, string Country, DocumentStatus ApprovedBy, ExtractedInvoice Invoice);
+
+/// <summary>
+/// Writes settled invoices in a format an accounting system or a person imports. Excel and CSV here; an
+/// adapter for a specific ERP would be one more implementation.
+/// </summary>
+public interface IAccountingExport
+{
+	/// <summary>The format written.</summary>
+	ExportFormat Format { get; }
+
+	/// <summary>The media type.</summary>
+	string ContentType { get; }
+
+	/// <summary>The file extension, with its dot.</summary>
+	string Extension { get; }
+
+	/// <summary>Writes the file.</summary>
+	/// <param name="rows">The invoices, in order.</param>
+	/// <param name="language">The headers' language.</param>
+	/// <returns>The file's bytes.</returns>
+	byte[] Write(IReadOnlyList<ExportRow> rows, ExportLanguage language);
 }

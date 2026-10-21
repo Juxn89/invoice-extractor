@@ -59,3 +59,9 @@ being read, already approved or failed.
 
 ### document-not_found
 `document.not_found` · 404. No document has that id.
+
+## Export
+
+### export-unknown_option
+`export.unknown_option` · 400. `GET /v1/export` takes `format=xlsx` or `csv` and `lang=es` or `en`; both
+are optional (Excel, Spanish headers).

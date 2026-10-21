@@ -1,12 +1,15 @@
 namespace InvoiceExtractor.Infrastructure;
 
 using InvoiceExtractor.Application.Abstractions;
+using InvoiceExtractor.Application.Features.Dashboard;
 using InvoiceExtractor.Application.Features.Documents;
+using InvoiceExtractor.Application.Features.Export;
 using InvoiceExtractor.Application.Features.Processing;
 using InvoiceExtractor.Application.Features.Review;
 using InvoiceExtractor.Application.Features.Upload;
 using InvoiceExtractor.Infrastructure.Ai;
 using InvoiceExtractor.Infrastructure.Documents;
+using InvoiceExtractor.Infrastructure.Export;
 using InvoiceExtractor.Infrastructure.Files;
 using InvoiceExtractor.Infrastructure.Persistence;
 using InvoiceExtractor.Infrastructure.Processing;
@@ -50,6 +53,8 @@ public static class DependencyInjection
 		services.AddSingleton<IDocumentInspector, DocumentInspector>();
 		services.AddSingleton<IDocumentPreprocessor, DocumentPreprocessor>();
 		services.AddSingleton<IInvoiceExtractor, ClaudeInvoiceExtractor>();
+		services.AddSingleton<IAccountingExport, ExcelExport>();
+		services.AddSingleton<IAccountingExport, CsvExport>();
 
 		services.AddScoped<UploadBatch>();
 		services.AddScoped<GetDocument>();
@@ -59,6 +64,8 @@ public static class DependencyInjection
 		services.AddScoped<GetDocumentReview>();
 		services.AddScoped<GetDocumentFile>();
 		services.AddScoped<ApproveDocument>();
+		services.AddScoped<ExportInvoices>();
+		services.AddScoped<GetDashboard>();
 		services.AddSingleton<ExtractionPipeline>();
 		services.AddScoped<ProcessDocument>();
 

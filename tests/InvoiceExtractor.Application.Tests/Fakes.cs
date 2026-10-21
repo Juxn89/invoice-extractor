@@ -44,6 +44,21 @@ internal sealed class FakeDocumentRepository : IDocumentRepository
 
 	public Task<Document?> FindTrackedAsync(DocumentId id, CancellationToken cancellationToken) => GetAsync(id, cancellationToken);
 
+	public Task<IReadOnlyList<Document>> ListApprovedAsync(BatchId? batch, CancellationToken cancellationToken) =>
+		Task.FromResult<IReadOnlyList<Document>>([.. Documents.Where(d => d.Status is DocumentStatus.AutoApproved or DocumentStatus.Approved && (batch is null || d.BatchId == batch))]);
+
+	public Task<IReadOnlyDictionary<BatchId, string>> CountriesOfAsync(IReadOnlyCollection<BatchId> ids, CancellationToken cancellationToken) =>
+		Task.FromResult<IReadOnlyDictionary<BatchId, string>>(Batches.Where(b => ids.Contains(b.Id)).ToDictionary(static b => b.Id, static b => b.Country));
+
+	public Task<IReadOnlyDictionary<DocumentId, Domain.Invoices.ExtractedInvoice>> FinalReadingsAsync(IReadOnlyCollection<DocumentId> ids, CancellationToken cancellationToken) =>
+		Task.FromResult<IReadOnlyDictionary<DocumentId, Domain.Invoices.ExtractedInvoice>>(new Dictionary<DocumentId, Domain.Invoices.ExtractedInvoice>());
+
+	public Task<IReadOnlyDictionary<DocumentStatus, int>> CountByStatusAsync(CancellationToken cancellationToken) =>
+		Task.FromResult<IReadOnlyDictionary<DocumentStatus, int>>(Documents.GroupBy(static d => d.Status).ToDictionary(static g => g.Key, static g => g.Count()));
+
+	public Task<ExtractionTotals> ExtractionTotalsAsync(DateTimeOffset? since, CancellationToken cancellationToken) =>
+		Task.FromResult(new ExtractionTotals(0, 0, 0, 0m));
+
 	public void Add(Batch batch, IReadOnlyCollection<Document> documents) => _staged.Add((batch, documents));
 
 	public Task SaveChangesAsync(CancellationToken cancellationToken)

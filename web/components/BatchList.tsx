@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronRight, FileImage, FileText } from "lucide-react";
+import { ChevronRight, FileImage, FileSpreadsheet, FileText } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { api, inFlight, type BatchResponse } from "@/lib/api";
@@ -60,6 +60,15 @@ export function BatchList({ refreshKey }: { refreshKey: number }) {
 						</time>
 						<span className="text-muted">· {t.countries[batch.country]}</span>
 						<span className="ml-auto text-muted">{t.batches.documents(batch.documents.length)}</span>
+						{batch.documents.some((d) => d.status === "AutoApproved" || d.status === "Approved") && (
+							<a
+								href={api.exportUrl("xlsx", locale, batch.id)}
+								className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs font-medium text-brand-dark hover:bg-brand-soft"
+							>
+								<FileSpreadsheet className="size-3.5" aria-hidden />
+								{t.batches.export}
+							</a>
+						)}
 					</header>
 					<ul className="divide-y divide-line">
 						{batch.documents.map((document) => (

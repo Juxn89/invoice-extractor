@@ -18,6 +18,14 @@
 	--color-info: #075985;
 	--color-info-soft: #e1f0fa;
 
+	/* Status bar fills, one per segment and in this order (adjacent pairs validated for colour-vision
+	   deficiency and normal vision with the dataviz palette validator, on the white card). */
+	--color-chart-auto: #0f8a6f;
+	--color-chart-approved: #7a6bd1;
+	--color-chart-review: #d9901a;
+	--color-chart-failed: #c9423a;
+	--color-chart-inflight: #2f7fc2;
+
 	--font-sans: ui-sans-serif, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 	--font-mono: ui-monospace, "Cascadia Mono", "SF Mono", Menlo, Consolas, monospace;
 }

@@ -23,6 +23,9 @@ So far:
 - **Web** (`web/`, Next.js 16, Spanish and English): upload a batch with its country, follow each document's
   status live, and review what validation could not confirm side by side with the original, the failing
   field highlighted with the rule it broke.
+- **Export and dashboard:** the settled invoices (approved by the rules or by a person) as an Excel workbook
+  (invoices and lines, amounts as numbers, dates as dates) or a CSV hardened against formula injection; and
+  a dashboard of statuses, auto-approval rate and model cost, today's spend against the daily cap included.
 - **Evals:** a synthetic dataset of 30 invoices and receipts with planted errors, and the scorer every
   extractor will be measured with. See [`evals/README.md`](evals/README.md).
 
