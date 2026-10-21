@@ -32,3 +32,4 @@ jobs:
       # Scores the oracle against the committed manifest: proves the dataset, validator and scorer agree.
       # No model is called; the Haiku run is manual and budget-gated (evals/README.md).
       - run: dotnet run --project evals/InvoiceExtractor.Evals -c Release --no-build -- run oracle
+      - run: dotnet run --project evals/InvoiceExtractor.Evals -c Release --no-build -- run oracle --set hard

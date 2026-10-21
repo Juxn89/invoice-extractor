@@ -12,18 +12,23 @@ using InvoiceExtractor.Evals.Dataset;
 /// <param name="Issuer">Who issues it.</param>
 /// <param name="Printed">Exactly what the document shows.</param>
 /// <param name="Planted">The one rule it breaks on purpose, if any.</param>
+/// <param name="Hard">
+/// Rendered the hard way: degraded image, and distractors printed next to the real fields (the customer's tax
+/// id, a due date, an order number, a "paid" stamp across the table).
+/// </param>
 internal sealed record DocumentSpec(
 	string Id,
 	DocumentKind Kind,
 	Market Market,
 	Issuer Issuer,
 	ExtractedInvoice Printed,
-	IssueCode? Planted)
+	IssueCode? Planted,
+	bool Hard = false)
 {
 	/// <summary>The file name the renderer writes.</summary>
 	public string FileName => Id + (Kind switch
 	{
-		DocumentKind.DigitalPdf => ".pdf",
+		DocumentKind.DigitalPdf or DocumentKind.ScannedPdf => ".pdf",
 		DocumentKind.Photo => ".jpg",
 		_ => ".png",
 	});
@@ -53,6 +58,9 @@ internal static class DatasetPlan
 
 	/// <summary>The UI samples' seed: different, so the samples a visitor tries are not the documents scored.</summary>
 	public const int SamplesSeed = 2027;
+
+	/// <summary>The hard set's seed.</summary>
+	public const int HardSeed = 2028;
 
 	/// <summary>The date validation treats as today, for both sets.</summary>
 	public static DateOnly AsOf { get; } = new(2026, 10, 21);
@@ -111,15 +119,37 @@ internal static class DatasetPlan
 		("sample-12", DocumentKind.DigitalPdf, Catalog.Spain, 0, null),
 	];
 
+	// The hard set: every document degraded and carrying distractors. It exists because the standard set turned
+	// out too easy to tell one extraction setup from another (Haiku 5.5 scored 1.000 on it on 21 Oct 2026).
+	private static readonly (string Id, DocumentKind Kind, Market Market, int IssuerIndex, IssueCode? Planted)[] HardLayout =
+	[
+		("ni-h01", DocumentKind.ScannedPdf, Catalog.Nicaragua, 2, null),
+		("ni-h02", DocumentKind.Photo, Catalog.Nicaragua, 0, null),
+		("ni-h03", DocumentKind.ThermalReceipt, Catalog.Nicaragua, 1, null),
+		("ni-h04", DocumentKind.Scan, Catalog.Nicaragua, 0, IssueCode.LinesDoNotMatchSubtotal),
+		("mx-h01", DocumentKind.ScannedPdf, Catalog.Mexico, 1, IssueCode.TotalMismatch),
+		("mx-h02", DocumentKind.Photo, Catalog.Mexico, 0, null),
+		("mx-h03", DocumentKind.ThermalReceipt, Catalog.Mexico, 2, null),
+		("mx-h04", DocumentKind.Scan, Catalog.Mexico, 2, null),
+		("xx-h01", DocumentKind.Photo, Catalog.UnitedStates, 1, null),
+		("xx-h02", DocumentKind.ScannedPdf, Catalog.Spain, 0, null),
+		("xx-h03", DocumentKind.Scan, Catalog.Spain, 0, null),
+		("xx-h04", DocumentKind.DigitalPdf, Catalog.UnitedStates, 0, null),
+	];
+
 	/// <summary>The 30 documents the evals score.</summary>
-	public static IReadOnlyList<DocumentSpec> Evaluation() => Build(EvalLayout, EvalSeed);
+	public static IReadOnlyList<DocumentSpec> Evaluation() => Build(EvalLayout, EvalSeed, hard: false);
 
 	/// <summary>The 12 documents offered in the UI as "try an example".</summary>
-	public static IReadOnlyList<DocumentSpec> Samples() => Build(SamplesLayout, SamplesSeed);
+	public static IReadOnlyList<DocumentSpec> Samples() => Build(SamplesLayout, SamplesSeed, hard: false);
+
+	/// <summary>The 12 hard documents, scored on their own.</summary>
+	public static IReadOnlyList<DocumentSpec> Hard() => Build(HardLayout, HardSeed, hard: true);
 
 	private static List<DocumentSpec> Build(
 		(string Id, DocumentKind Kind, Market Market, int IssuerIndex, IssueCode? Planted)[] layout,
-		int seed)
+		int seed,
+		bool hard)
 	{
 		// Not a security use: a seeded generator is the point, so the dataset regenerates byte for byte.
 #pragma warning disable CA5394
@@ -150,7 +180,7 @@ internal static class DatasetPlan
 					Total: null),
 				issuer.TaxRate);
 
-			specs.Add(new DocumentSpec(id, kind, market, issuer, planted is { } code ? Plant(invoice, code, issuer) : invoice, planted));
+			specs.Add(new DocumentSpec(id, kind, market, issuer, planted is { } code ? Plant(invoice, code, issuer) : invoice, planted, hard));
 		}
 #pragma warning restore CA5394
 

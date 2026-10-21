@@ -10,10 +10,14 @@ using InvoiceExtractor.Evals.Scoring;
 // each planted one breaks exactly the rule it was planted for. None of these render a file.
 public sealed class DatasetIntegrityTests
 {
-	public static TheoryData<string> Sets => ["evaluation", "samples"];
+	public static TheoryData<string> Sets => ["evaluation", "samples", "hard"];
 
-	private static IReadOnlyList<DocumentSpec> Set(string name) =>
-		name == "evaluation" ? DatasetPlan.Evaluation() : DatasetPlan.Samples();
+	private static IReadOnlyList<DocumentSpec> Set(string name) => name switch
+	{
+		"evaluation" => DatasetPlan.Evaluation(),
+		"hard" => DatasetPlan.Hard(),
+		_ => DatasetPlan.Samples(),
+	};
 
 	[Theory]
 	[MemberData(nameof(Sets))]
@@ -54,6 +58,19 @@ public sealed class DatasetIntegrityTests
 		Assert.Equal(6, specs.Count(static s => s.Kind == DocumentKind.Photo));
 		Assert.Equal(4, specs.Count(static s => s.Kind == DocumentKind.ThermalReceipt));
 		Assert.Equal(5, specs.Count(static s => s.Planted is not null));
+	}
+
+	[Fact]
+	public void The_hard_set_covers_every_kind_and_is_all_hard()
+	{
+		var specs = DatasetPlan.Hard();
+
+		Assert.Equal(12, specs.Count);
+		Assert.All(specs, static s => Assert.True(s.Hard));
+		Assert.Equal(3, specs.Count(static s => s.Kind == DocumentKind.ScannedPdf));
+		Assert.Equal(Enum.GetValues<DocumentKind>().Order(), specs.Select(static s => s.Kind).Distinct().Order());
+		Assert.Equal(2, specs.Count(static s => s.Planted is not null));
+		Assert.All(DatasetPlan.Evaluation(), static s => Assert.False(s.Hard));
 	}
 
 	[Fact]

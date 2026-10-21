@@ -17,7 +17,7 @@ identically. `evals/samples/` holds 12 more documents, from a different seed, wh
 "try an example"; they are never scored.
 
 ```bash
-dotnet run --project evals/InvoiceExtractor.Evals -- generate   # writes evals/dataset and evals/samples
+dotnet run --project evals/InvoiceExtractor.Evals -- generate   # evals/dataset, evals/samples, evals/dataset-hard
 ```
 
 ## Metrics
@@ -70,6 +70,42 @@ First run, 21 Oct 2026 (`claude-haiku-5-5`, adaptive thinking at `effort: low`, 
 | Planted errors sent to review | 5 / 5 | |
 | Cost per document | USD 0.000509 (total 0.015270, 94,106 input and 11,719 output tokens) | ≤ USD 0.001 |
 
-A perfect score says the harness and the extractor work end to end. It also says this dataset is easy for
-the model: clean renders, legible print. It cannot yet tell the retry (day 6 of the plan) from no retry,
-and it has no scanned PDF. Harder documents are the next thing it needs.
+A perfect score says the harness and the extractor work end to end. It also says this set is easy for the
+model: clean renders, legible print. Hence the hard set.
+
+## The hard set
+
+`evals/dataset-hard`: 12 more documents, scored on their own (`--set hard`) so the standard set stays a
+stable baseline. Every one is degraded, and the invoices carry distractors printed next to the real fields:
+
+| What | How |
+|---|---|
+| Scanned PDF (3) | A PDF whose page is only a picture, no text layer: the path a digital PDF never takes |
+| Poor scan (3) | 100 dpi, greyscale, washed out, tilted up to 2.5°, noisy |
+| Poor photo (3) | Keystoned, tilted 5-9°, a shadow across a corner, softer, 1100 px, JPEG quality 50 |
+| Faded receipt (2) | A 58 mm roll, washed-out print fading towards one edge |
+| Digital PDF (1) | Clean, distractors only |
+| Distractors | The customer's tax id (in the issuer's country format, so the format rule cannot catch a swap), a due date, a purchase order number, a translucent PAID stamp across the line table |
+
+Two are inconsistent on purpose (`ni-h04`, `mx-h01`). Each document stays legible to a person: the point is
+to make the model work, not to make the task impossible.
+
+First run, 21 Oct 2026, same settings:
+
+| Metric | Result | Pass mark |
+|---|---|---|
+| Key fields | total, date, number 1.000; tax id 0.917 | ≥ 0.95 |
+| Line F1 | 1.000 | ≥ 0.90 |
+| Auto-approved / precision / false | 8 / 1.000 / 0 | ≥ 0.98, ≤ 1 |
+| Planted errors sent to review | 2 / 2 | |
+| Cost per document | USD 0.000651 (total 0.007816) | ≤ USD 0.001 |
+
+It fails the key-field mark, and the two misses are the ones this design exists for:
+
+- `mx-h03` (faded receipt): the RFC `TNO120604KJ8` read as `TN0120604KJ8`, the letter O as a zero. The RFC
+  format rule caught it.
+- `ni-h02` (poor photo): a quantity of 1.5 under the PAID stamp read as 1. The line arithmetic rule caught
+  it (1 × 56.98 is not 85.47).
+
+Both went to review; nothing wrong was approved. Both are what the retry with the validation errors as
+feedback (day 6 of the plan) is meant to fix, and this set is where that will show.

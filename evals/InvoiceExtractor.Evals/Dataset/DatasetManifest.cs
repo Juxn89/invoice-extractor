@@ -17,6 +17,9 @@ internal enum DocumentKind
 
 	/// <summary>A narrow thermal till receipt, monospaced.</summary>
 	ThermalReceipt = 4,
+
+	/// <summary>A PDF whose page is only a picture: what a scanner that does no OCR produces. No text layer.</summary>
+	ScannedPdf = 5,
 }
 
 /// <summary>What should happen to a document once its extraction has been validated.</summary>

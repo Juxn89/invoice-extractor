@@ -11,6 +11,8 @@ using InvoiceExtractor.Infrastructure.Ai;
 // same from the root, from evals/ or from `dotnet run --project`.
 const string SolutionFile = "InvoiceExtractor.slnx";
 const string DatasetFolder = "evals/dataset";
+const string HardDatasetFolder = "evals/dataset-hard";
+const string HardSet = "hard";
 const string SamplesFolder = "evals/samples";
 const string ResultsFolder = "evals/results";
 const string ThresholdsFile = "evals/thresholds.json";
@@ -23,12 +25,13 @@ const decimal DefaultMaxCostUsd = 0.10m;
 var root = FindRoot(Directory.GetCurrentDirectory());
 var command = args.Length > 0 ? args[0] : string.Empty;
 var extractorName = args.Length > 1 && !args[1].StartsWith("--", StringComparison.Ordinal) ? args[1] : "oracle";
+var hard = Text(args, "--set") == HardSet;
 
 return command switch
 {
 	"generate" => Generate(root),
-	"run" when extractorName == "oracle" => await RunAsync(root, new OracleExtractor(), limit: null, guard: null).ConfigureAwait(false),
-	"run" when extractorName == "claude" => await RunPaidAsync(root, args).ConfigureAwait(false),
+	"run" when extractorName == "oracle" => await RunAsync(root, new OracleExtractor(), limit: null, guard: null, hard).ConfigureAwait(false),
+	"run" when extractorName == "claude" => await RunPaidAsync(root, args, hard).ConfigureAwait(false),
 	_ => Usage(),
 };
 
@@ -37,8 +40,8 @@ static int Usage()
 	Console.Error.WriteLine("""
 		usage:
 		  evals generate
-		  evals run oracle
-		  evals run claude --allow-paid [--limit N] [--max-calls N] [--max-cost USD]
+		  evals run oracle [--set hard]
+		  evals run claude --allow-paid [--set hard] [--limit N] [--max-calls N] [--max-cost USD]
 		""");
 	return 2;
 }
@@ -47,6 +50,7 @@ static int Generate(string root)
 {
 	Write(Path.Combine(root, DatasetFolder), DatasetPlan.Evaluation(), DatasetPlan.EvalSeed);
 	Write(Path.Combine(root, SamplesFolder), DatasetPlan.Samples(), DatasetPlan.SamplesSeed);
+	Write(Path.Combine(root, HardDatasetFolder), DatasetPlan.Hard(), DatasetPlan.HardSeed);
 	return 0;
 
 	static void Write(string folder, IReadOnlyList<DocumentSpec> specs, int seed)
@@ -67,7 +71,7 @@ static int Generate(string root)
 
 // Calls the paid API only with --allow-paid, within the run's limits and what the shared ledger says is left,
 // and records the run in the ledger even when it stops halfway.
-static async Task<int> RunPaidAsync(string root, string[] args)
+static async Task<int> RunPaidAsync(string root, string[] args, bool hard)
 {
 	if (!args.Contains("--allow-paid"))
 	{
@@ -100,7 +104,7 @@ static async Task<int> RunPaidAsync(string root, string[] args)
 	try
 	{
 		using var extractor = new ClaudeExtractor(options, guard);
-		return await RunAsync(root, extractor, limit, guard).ConfigureAwait(false);
+		return await RunAsync(root, extractor, limit, guard, hard).ConfigureAwait(false);
 	}
 	catch (BudgetExceededException exception)
 	{
@@ -117,16 +121,16 @@ static async Task<int> RunPaidAsync(string root, string[] args)
 	{
 		if (guard.Calls > 0)
 		{
-			var experiment = limit is null ? "eval-full" : $"eval-smoke-{limit}";
+			var experiment = (limit is null ? "eval-full" : $"eval-smoke-{limit}") + (hard ? "-hard" : string.Empty);
 			ledger.Append(experiment, options.Model, guard, $"invoice-extractor evals, {note}; usage from each response");
 			Console.WriteLine(string.Create(CultureInfo.InvariantCulture, $"ledger: {guard.Calls} calls, {guard.CostUsd:F6} USD recorded"));
 		}
 	}
 }
 
-static async Task<int> RunAsync(string root, IDocumentExtractor extractor, int? limit, SpendingGuard? guard)
+static async Task<int> RunAsync(string root, IDocumentExtractor extractor, int? limit, SpendingGuard? guard, bool hard)
 {
-	var dataset = Path.Combine(root, DatasetFolder);
+	var dataset = Path.Combine(root, hard ? HardDatasetFolder : DatasetFolder);
 	var manifest = DatasetJson.Read(dataset);
 	var entries = limit is { } n ? manifest.Documents.Take(n).ToList() : manifest.Documents;
 	var scores = new List<DocumentScore>(entries.Count);
@@ -149,14 +153,14 @@ static async Task<int> RunAsync(string root, IDocumentExtractor extractor, int? 
 		var results = Path.Combine(root, ResultsFolder);
 		Directory.CreateDirectory(results);
 		await File.WriteAllTextAsync(
-			Path.Combine(results, $"{extractor.Name}.json"),
+			Path.Combine(results, $"{extractor.Name}{(hard ? "-" + HardSet : string.Empty)}.json"),
 			JsonSerializer.Serialize(report, DatasetJson.Options)).ConfigureAwait(false);
 	}
 
 	Console.WriteLine(string.Create(
 		CultureInfo.InvariantCulture,
 		$"""
-		{report.Extractor}: {report.Documents} documents
+		{report.Extractor}{(hard ? " (hard set)" : string.Empty)}: {report.Documents} documents
 		  key fields  total {report.TotalAccuracy:0.000}  date {report.DateAccuracy:0.000}  tax id {report.TaxIdAccuracy:0.000}  number {report.NumberAccuracy:0.000}
 		  line F1     {report.LineF1:0.000}
 		  approved    {report.AutoApproved} (precision {report.AutoApprovedPrecision:0.000}, {report.FalseAutoApproved} false)
@@ -178,6 +182,12 @@ static string Line(DocumentScore s) => string.Create(
 	$"  {s.Id,-6} total {Mark(s.TotalMatches)} date {Mark(s.DateMatches)} id {Mark(s.TaxIdMatches)} no {Mark(s.NumberMatches)} lines {s.MatchedLines}/{s.ExpectedLines} {(s.AutoApproved ? "approved" : "review")} {s.CostUsd:F6}{(s.Error is null ? string.Empty : " ERROR " + s.Error)}{(s.Issues.Count == 0 ? string.Empty : " [" + string.Join(", ", s.Issues.Select(static i => i.Code)) + "]")}");
 
 static string Mark(bool ok) => ok ? "ok" : "--";
+
+static string? Text(string[] args, string name)
+{
+	var index = Array.IndexOf(args, name);
+	return index >= 0 && index + 1 < args.Length ? args[index + 1] : null;
+}
 
 static decimal Option(string[] args, string name, decimal fallback)
 {
