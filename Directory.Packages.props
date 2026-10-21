@@ -11,6 +11,15 @@
 	</PropertyGroup>
 
 	<!--
+		Rendering: the synthetic dataset now, image preprocessing from day 3. SkiaSharp is MIT; ImageSharp is
+		out (Six Labors Split License, not OSI). 4.153.1 published 30 Sep 2026, verified 21 Oct 2026.
+	-->
+	<ItemGroup Label="Rendering">
+		<PackageVersion Include="SkiaSharp" Version="4.153.1" />
+		<PackageVersion Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="4.153.1" />
+	</ItemGroup>
+
+	<!--
 		xUnit stays on the v2 line, as in docs-assistant: TngTech.ArchUnitNET.xUnit depends on xunit.assert
 		2.x, and xunit.runner.visualstudio 3.1.5 is the last v2-compatible runner (4.x is v3-only).
 		Microsoft.NET.Test.Sdk 18.11.0 was 8 days old, so 18.10.1 (15 Sep 2026).

@@ -1,0 +1,7 @@
+{
+  "minKeyFieldAccuracy": 0.95,
+  "minLineF1": 0.90,
+  "minAutoApprovedPrecision": 0.98,
+  "maxFalseAutoApproved": 1,
+  "maxCostPerDocumentUsd": 0.001
+}

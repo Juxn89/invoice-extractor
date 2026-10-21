@@ -1,0 +1,552 @@
+{
+  "asOf": "2026-10-21",
+  "seed": 2027,
+  "documents": [
+    {
+      "id": "sample-01",
+      "file": "sample-01.pdf",
+      "kind": "DigitalPdf",
+      "country": "NI",
+      "language": "es",
+      "expected": {
+        "issuerName": "Distribuidora El Mirador, S.A.",
+        "issuerTaxId": "J0310000252297",
+        "receiverName": "Escuela Rub\u00E9n Dar\u00EDo",
+        "number": "F-001037",
+        "issueDate": "2026-06-09",
+        "currency": "NIO",
+        "lines": [
+          {
+            "description": "Martillo de u\u00F1a",
+            "quantity": 7,
+            "unitPrice": 281.05,
+            "lineTotal": 1967.35
+          },
+          {
+            "description": "Az\u00FAcar morena",
+            "quantity": 2.5,
+            "unitPrice": 43.51,
+            "lineTotal": 108.78
+          },
+          {
+            "description": "Az\u00FAcar morena",
+            "quantity": 2.0,
+            "unitPrice": 61.97,
+            "lineTotal": 123.94
+          },
+          {
+            "description": "Caja de tornillos",
+            "quantity": 10,
+            "unitPrice": 65.76,
+            "lineTotal": 657.60
+          },
+          {
+            "description": "Caf\u00E9 en grano 1 kg",
+            "quantity": 9,
+            "unitPrice": 408.82,
+            "lineTotal": 3679.38
+          }
+        ],
+        "subtotal": 6537.05,
+        "taxTotal": 980.56,
+        "total": 7517.61
+      },
+      "outcome": "AutoApprove",
+      "plantedIssue": null
+    },
+    {
+      "id": "sample-02",
+      "file": "sample-02.png",
+      "kind": "Scan",
+      "country": "NI",
+      "language": "es",
+      "expected": {
+        "issuerName": "Imprenta Los Robles, S.A.",
+        "issuerTaxId": "J0310000988417",
+        "receiverName": "Hotel Lago Azul",
+        "number": "F-001065",
+        "issueDate": "2026-05-07",
+        "currency": "NIO",
+        "lines": [
+          {
+            "description": "Filtros de papel (100 u.)",
+            "quantity": 2,
+            "unitPrice": 119.55,
+            "lineTotal": 239.10
+          },
+          {
+            "description": "Leche entera 1 L",
+            "quantity": 4,
+            "unitPrice": 41.46,
+            "lineTotal": 165.84
+          }
+        ],
+        "subtotal": 404.94,
+        "taxTotal": 60.74,
+        "total": 465.68
+      },
+      "outcome": "AutoApprove",
+      "plantedIssue": null
+    },
+    {
+      "id": "sample-03",
+      "file": "sample-03.jpg",
+      "kind": "Photo",
+      "country": "NI",
+      "language": "es",
+      "expected": {
+        "issuerName": "Ferreter\u00EDa La Esperanza",
+        "issuerTaxId": "001-150385-0002K",
+        "receiverName": "Hotel Lago Azul",
+        "number": "F-001099",
+        "issueDate": "2026-06-28",
+        "currency": "NIO",
+        "lines": [
+          {
+            "description": "Resma de papel carta",
+            "quantity": 4,
+            "unitPrice": 236.34,
+            "lineTotal": 945.36
+          },
+          {
+            "description": "Servicio de limpieza (hora)",
+            "quantity": 5,
+            "unitPrice": 421.82,
+            "lineTotal": 2109.10
+          },
+          {
+            "description": "Filtros de papel (100 u.)",
+            "quantity": 8,
+            "unitPrice": 112.95,
+            "lineTotal": 903.60
+          },
+          {
+            "description": "Teclado USB",
+            "quantity": 7,
+            "unitPrice": 752.71,
+            "lineTotal": 5268.97
+          }
+        ],
+        "subtotal": 9227.03,
+        "taxTotal": 1384.05,
+        "total": 10611.08
+      },
+      "outcome": "AutoApprove",
+      "plantedIssue": null
+    },
+    {
+      "id": "sample-04",
+      "file": "sample-04.png",
+      "kind": "ThermalReceipt",
+      "country": "NI",
+      "language": "es",
+      "expected": {
+        "issuerName": "Distribuidora El Mirador, S.A.",
+        "issuerTaxId": "J0310000252297",
+        "receiverName": null,
+        "number": "T-01121",
+        "issueDate": "2026-01-08",
+        "currency": "NIO",
+        "lines": [
+          {
+            "description": "Caf\u00E9 molido",
+            "quantity": 1.0,
+            "unitPrice": 313.76,
+            "lineTotal": 313.76
+          },
+          {
+            "description": "Filtros de papel (100 u.)",
+            "quantity": 10,
+            "unitPrice": 100.20,
+            "lineTotal": 1002.00
+          },
+          {
+            "description": "Pintura l\u00E1tex, gal\u00F3n",
+            "quantity": 5,
+            "unitPrice": 618.13,
+            "lineTotal": 3090.65
+          }
+        ],
+        "subtotal": 4406.41,
+        "taxTotal": 660.96,
+        "total": 5067.37
+      },
+      "outcome": "AutoApprove",
+      "plantedIssue": null
+    },
+    {
+      "id": "sample-05",
+      "file": "sample-05.pdf",
+      "kind": "DigitalPdf",
+      "country": "MX",
+      "language": "es",
+      "expected": {
+        "issuerName": "Comercializadora Mirlo, S.A. de C.V.",
+        "issuerTaxId": "CMI050101AB1",
+        "receiverName": "Cafeter\u00EDa La Ceiba",
+        "number": "A-001155",
+        "issueDate": "2026-03-20",
+        "currency": "MXN",
+        "lines": [
+          {
+            "description": "Teclado USB",
+            "quantity": 2,
+            "unitPrice": 272.62,
+            "lineTotal": 545.24
+          },
+          {
+            "description": "Resma de papel carta",
+            "quantity": 10,
+            "unitPrice": 104.44,
+            "lineTotal": 1044.40
+          },
+          {
+            "description": "Leche entera 1 L",
+            "quantity": 3,
+            "unitPrice": 24.66,
+            "lineTotal": 73.98
+          },
+          {
+            "description": "Vasos desechables (50 u.)",
+            "quantity": 6,
+            "unitPrice": 54.72,
+            "lineTotal": 328.32
+          }
+        ],
+        "subtotal": 1991.94,
+        "taxTotal": 318.71,
+        "total": 2310.65
+      },
+      "outcome": "AutoApprove",
+      "plantedIssue": null
+    },
+    {
+      "id": "sample-06",
+      "file": "sample-06.png",
+      "kind": "Scan",
+      "country": "MX",
+      "language": "es",
+      "expected": {
+        "issuerName": "Papeler\u00EDa del Centro",
+        "issuerTaxId": "GOLR800315H21",
+        "receiverName": "Hotel Paseo",
+        "number": "A-001190",
+        "issueDate": "2026-07-04",
+        "currency": "MXN",
+        "lines": [
+          {
+            "description": "Martillo de u\u00F1a",
+            "quantity": 3,
+            "unitPrice": 146.39,
+            "lineTotal": 439.17
+          },
+          {
+            "description": "Teclado USB",
+            "quantity": 6,
+            "unitPrice": 313.48,
+            "lineTotal": 1880.88
+          },
+          {
+            "description": "Vasos desechables (50 u.)",
+            "quantity": 5,
+            "unitPrice": 65.74,
+            "lineTotal": 328.70
+          },
+          {
+            "description": "Vasos desechables (50 u.)",
+            "quantity": 7,
+            "unitPrice": 54.98,
+            "lineTotal": 384.86
+          },
+          {
+            "description": "Caja de tornillos",
+            "quantity": 10,
+            "unitPrice": 52.39,
+            "lineTotal": 523.90
+          }
+        ],
+        "subtotal": 5357.51,
+        "taxTotal": 857.20,
+        "total": 6214.71
+      },
+      "outcome": "Review",
+      "plantedIssue": "LinesDoNotMatchSubtotal"
+    },
+    {
+      "id": "sample-07",
+      "file": "sample-07.jpg",
+      "kind": "Photo",
+      "country": "MX",
+      "language": "es",
+      "expected": {
+        "issuerName": "Tostadores del Norte, S.A. de C.V.",
+        "issuerTaxId": "TNO120604KJ8",
+        "receiverName": "Despacho Contable Ruiz",
+        "number": "A-001196",
+        "issueDate": "2026-04-12",
+        "currency": "MXN",
+        "lines": [
+          {
+            "description": "Az\u00FAcar morena",
+            "quantity": 2.0,
+            "unitPrice": 22.11,
+            "lineTotal": 44.22
+          },
+          {
+            "description": "Caf\u00E9 molido",
+            "quantity": 2.0,
+            "unitPrice": 167.40,
+            "lineTotal": 334.80
+          },
+          {
+            "description": "Az\u00FAcar morena",
+            "quantity": 1.0,
+            "unitPrice": 30.15,
+            "lineTotal": 30.15
+          },
+          {
+            "description": "Martillo de u\u00F1a",
+            "quantity": 10,
+            "unitPrice": 146.66,
+            "lineTotal": 1466.60
+          },
+          {
+            "description": "Pintura l\u00E1tex, gal\u00F3n",
+            "quantity": 1,
+            "unitPrice": 315.42,
+            "lineTotal": 315.42
+          },
+          {
+            "description": "Teclado USB",
+            "quantity": 8,
+            "unitPrice": 269.03,
+            "lineTotal": 2152.24
+          }
+        ],
+        "subtotal": 4343.43,
+        "taxTotal": 347.47,
+        "total": 4690.90
+      },
+      "outcome": "AutoApprove",
+      "plantedIssue": null
+    },
+    {
+      "id": "sample-08",
+      "file": "sample-08.png",
+      "kind": "ThermalReceipt",
+      "country": "MX",
+      "language": "es",
+      "expected": {
+        "issuerName": "Papeler\u00EDa del Centro",
+        "issuerTaxId": "GOLR800315H21",
+        "receiverName": null,
+        "number": "T-01221",
+        "issueDate": "2026-03-04",
+        "currency": "MXN",
+        "lines": [
+          {
+            "description": "Servicio de limpieza (hora)",
+            "quantity": 1,
+            "unitPrice": 212.40,
+            "lineTotal": 212.40
+          },
+          {
+            "description": "Martillo de u\u00F1a",
+            "quantity": 10,
+            "unitPrice": 173.31,
+            "lineTotal": 1733.10
+          },
+          {
+            "description": "Martillo de u\u00F1a",
+            "quantity": 6,
+            "unitPrice": 178.12,
+            "lineTotal": 1068.72
+          }
+        ],
+        "subtotal": 3014.22,
+        "taxTotal": 482.28,
+        "total": 3496.50
+      },
+      "outcome": "AutoApprove",
+      "plantedIssue": null
+    },
+    {
+      "id": "sample-09",
+      "file": "sample-09.pdf",
+      "kind": "DigitalPdf",
+      "country": "XX",
+      "language": "en",
+      "expected": {
+        "issuerName": "Mirlo Coffee Supply LLC",
+        "issuerTaxId": "98-7654321",
+        "receiverName": "Harbor Hotel",
+        "number": "INV-001255",
+        "issueDate": "2026-01-08",
+        "currency": "USD",
+        "lines": [
+          {
+            "description": "USB keyboard",
+            "quantity": 1,
+            "unitPrice": 16.52,
+            "lineTotal": 16.52
+          },
+          {
+            "description": "Brown sugar",
+            "quantity": 2.0,
+            "unitPrice": 1.51,
+            "lineTotal": 3.02
+          },
+          {
+            "description": "Whole milk 1 L",
+            "quantity": 3,
+            "unitPrice": 1.40,
+            "lineTotal": 4.20
+          }
+        ],
+        "subtotal": 23.74,
+        "taxTotal": 2.43,
+        "total": 26.17
+      },
+      "outcome": "AutoApprove",
+      "plantedIssue": null
+    },
+    {
+      "id": "sample-10",
+      "file": "sample-10.png",
+      "kind": "Scan",
+      "country": "XX",
+      "language": "en",
+      "expected": {
+        "issuerName": "Northwind Office Goods Inc.",
+        "issuerTaxId": "47-1234567",
+        "receiverName": "Blue Lake Caf\u00E9",
+        "number": "INV-001270",
+        "issueDate": "2026-06-05",
+        "currency": "USD",
+        "lines": [
+          {
+            "description": "Whole milk 1 L",
+            "quantity": 6,
+            "unitPrice": 1.02,
+            "lineTotal": 6.12
+          },
+          {
+            "description": "Ground coffee",
+            "quantity": 2.0,
+            "unitPrice": 9.43,
+            "lineTotal": 18.86
+          },
+          {
+            "description": "Latex paint, gallon",
+            "quantity": 6,
+            "unitPrice": 21.20,
+            "lineTotal": 127.20
+          },
+          {
+            "description": "Cleaning service (hour)",
+            "quantity": 2,
+            "unitPrice": 10.08,
+            "lineTotal": 20.16
+          },
+          {
+            "description": "Paper filters (100 pcs)",
+            "quantity": 5,
+            "unitPrice": 3.59,
+            "lineTotal": 17.95
+          },
+          {
+            "description": "Box of screws",
+            "quantity": 2,
+            "unitPrice": 3.17,
+            "lineTotal": 6.34
+          }
+        ],
+        "subtotal": 196.63,
+        "taxTotal": 15.73,
+        "total": 212.36
+      },
+      "outcome": "AutoApprove",
+      "plantedIssue": null
+    },
+    {
+      "id": "sample-11",
+      "file": "sample-11.jpg",
+      "kind": "Photo",
+      "country": "XX",
+      "language": "en",
+      "expected": {
+        "issuerName": "Mirlo Coffee Supply LLC",
+        "issuerTaxId": "98-7654321",
+        "receiverName": "Blue Lake Caf\u00E9",
+        "number": "INV-001277",
+        "issueDate": "2026-10-02",
+        "currency": "USD",
+        "lines": [
+          {
+            "description": "Coffee beans 1 kg",
+            "quantity": 5,
+            "unitPrice": 9.01,
+            "lineTotal": 45.05
+          },
+          {
+            "description": "Box of screws",
+            "quantity": 7,
+            "unitPrice": 2.87,
+            "lineTotal": 20.09
+          }
+        ],
+        "subtotal": 65.14,
+        "taxTotal": 6.68,
+        "total": 81.82
+      },
+      "outcome": "Review",
+      "plantedIssue": "TotalMismatch"
+    },
+    {
+      "id": "sample-12",
+      "file": "sample-12.pdf",
+      "kind": "DigitalPdf",
+      "country": "XX",
+      "language": "es",
+      "expected": {
+        "issuerName": "Suministros Ib\u00E9ricos, S.L.",
+        "issuerTaxId": "B12345678",
+        "receiverName": "Cafeter\u00EDa El Retiro",
+        "number": "FV-001290",
+        "issueDate": "2026-06-08",
+        "currency": "EUR",
+        "lines": [
+          {
+            "description": "Martillo de u\u00F1a",
+            "quantity": 7,
+            "unitPrice": 9.26,
+            "lineTotal": 64.82
+          },
+          {
+            "description": "Filtros de papel (100 u.)",
+            "quantity": 6,
+            "unitPrice": 3.01,
+            "lineTotal": 18.06
+          },
+          {
+            "description": "Caf\u00E9 en grano 1 kg",
+            "quantity": 2,
+            "unitPrice": 8.33,
+            "lineTotal": 16.66
+          },
+          {
+            "description": "Caja de tornillos",
+            "quantity": 4,
+            "unitPrice": 1.83,
+            "lineTotal": 7.32
+          }
+        ],
+        "subtotal": 106.86,
+        "taxTotal": 22.44,
+        "total": 129.30
+      },
+      "outcome": "AutoApprove",
+      "plantedIssue": null
+    }
+  ]
+}

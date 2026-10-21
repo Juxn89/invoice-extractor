@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<RootNamespace>InvoiceExtractor.Evals.Tests</RootNamespace>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\..\evals\InvoiceExtractor.Evals\InvoiceExtractor.Evals.csproj" />
+	</ItemGroup>
+</Project>

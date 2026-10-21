@@ -32,5 +32,6 @@ Dockerfile.*    text eol=lf
 *.gif           binary
 *.ico           binary
 *.pdf           binary
+*.ttf           binary
 *.nupkg         binary
 *.dll           binary

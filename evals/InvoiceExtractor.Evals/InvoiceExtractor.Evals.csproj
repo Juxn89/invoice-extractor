@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<!--
+		Two commands: `generate` renders the synthetic dataset (evals/dataset) and the UI samples
+		(evals/samples); `run` scores an extractor against the dataset. See evals/README.md.
+	-->
+	<PropertyGroup>
+		<OutputType>Exe</OutputType>
+		<RootNamespace>InvoiceExtractor.Evals</RootNamespace>
+		<InvariantGlobalization>true</InvariantGlobalization>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\..\src\InvoiceExtractor.Domain\InvoiceExtractor.Domain.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="SkiaSharp" />
+		<PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<!-- The renderer loads its fonts from the output folder; see evals/fonts/README.md. -->
+		<None Include="..\fonts\*.ttf" Link="fonts\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<InternalsVisibleTo Include="InvoiceExtractor.Evals.Tests" />
+	</ItemGroup>
+</Project>

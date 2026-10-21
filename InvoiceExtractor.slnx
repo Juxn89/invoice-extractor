@@ -1,8 +1,12 @@
 <Solution>
+  <Folder Name="/evals/">
+    <Project Path="evals/InvoiceExtractor.Evals/InvoiceExtractor.Evals.csproj" />
+  </Folder>
   <Folder Name="/src/">
     <Project Path="src/InvoiceExtractor.Domain/InvoiceExtractor.Domain.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/InvoiceExtractor.Domain.Tests/InvoiceExtractor.Domain.Tests.csproj" />
+    <Project Path="tests/InvoiceExtractor.Evals.Tests/InvoiceExtractor.Evals.Tests.csproj" />
   </Folder>
 </Solution>

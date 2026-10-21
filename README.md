@@ -7,6 +7,9 @@ Excel.
 So far: the domain — the extracted invoice with `decimal` amounts, the validator (line arithmetic, totals,
 tax rate, tax-id format, dates) and country profiles for Nicaragua, Mexico and a generic fallback.
 
+The evals come first: a synthetic dataset of 30 invoices and receipts with planted errors, and the scorer
+that every extractor will be measured with. See [`evals/README.md`](evals/README.md).
+
 ```bash
 dotnet test
 ```
