@@ -20,6 +20,48 @@
 	</ItemGroup>
 
 	<!--
+		Day 3 (21 Oct 2026). The 10.0.13 servicing wave of EF Core and Microsoft.Extensions came out on 13 Oct,
+		so 10.0.12 (8 Sep). Npgsql's provider is under the PostgreSQL licence, EFCore.NamingConventions and
+		PdfPig under Apache-2.0; the rest is MIT.
+	-->
+	<ItemGroup Label="Persistence">
+		<PackageVersion Include="Microsoft.EntityFrameworkCore" Version="10.0.12" />
+		<PackageVersion Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.12" />
+		<PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.12" />
+		<PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
+		<!-- snake_case tables and columns without hand-naming every property. -->
+		<PackageVersion Include="EFCore.NamingConventions" Version="10.0.1" />
+	</ItemGroup>
+
+	<ItemGroup Label="Documents">
+		<PackageVersion Include="PdfPig" Version="0.1.16" />
+	</ItemGroup>
+
+	<ItemGroup Label="Hosting and observability">
+		<PackageVersion Include="Microsoft.Extensions.Options" Version="10.0.12" />
+		<PackageVersion Include="Microsoft.Extensions.Options.DataAnnotations" Version="10.0.12" />
+		<PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.12" />
+		<PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.12" />
+		<PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="10.10.0" />
+		<PackageVersion Include="Microsoft.Extensions.ServiceDiscovery" Version="10.10.0" />
+		<PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.19.1" />
+		<PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.19.1" />
+		<PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.19.0" />
+		<PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.19.0" />
+		<PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.19.0" />
+	</ItemGroup>
+
+	<!-- The AppHost SDK version (13.6.1, 7 Oct 2026) is in the AppHost project file. -->
+	<ItemGroup Label="Aspire">
+		<PackageVersion Include="Aspire.Hosting.PostgreSQL" Version="13.6.1" />
+		<!--
+			Transitive pin: Aspire.Hosting 13.6.1 brings MessagePack 2.5.302, vulnerable to GHSA-qhrr-8q5h-9q3h, and
+			NuGet audit fails the restore on it. 2.5.307 (3 Oct 2026) is the newest eligible patch on the 2.x line.
+		-->
+		<PackageVersion Include="MessagePack" Version="2.5.307" />
+	</ItemGroup>
+
+	<!--
 		xUnit stays on the v2 line, as in docs-assistant: TngTech.ArchUnitNET.xUnit depends on xunit.assert
 		2.x, and xunit.runner.visualstudio 3.1.5 is the last v2-compatible runner (4.x is v3-only).
 		Microsoft.NET.Test.Sdk 18.11.0 was 8 days old, so 18.10.1 (15 Sep 2026).
@@ -28,5 +70,10 @@
 		<PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.10.1" />
 		<PackageVersion Include="xunit" Version="2.9.3" />
 		<PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
+		<PackageVersion Include="TngTech.ArchUnitNET" Version="0.13.4" />
+		<PackageVersion Include="TngTech.ArchUnitNET.xUnit" Version="0.13.4" />
+		<!-- 4.16.0 is from 8 Oct, a day short of two weeks. -->
+		<PackageVersion Include="Testcontainers.PostgreSql" Version="4.15.0" />
+		<PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.12" />
 	</ItemGroup>
 </Project>

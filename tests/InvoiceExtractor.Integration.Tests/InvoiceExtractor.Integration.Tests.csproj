@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<ItemGroup>
+		<ProjectReference Include="..\..\src\InvoiceExtractor.Api\InvoiceExtractor.Api.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Testcontainers.PostgreSql" />
+		<PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<!-- Real files from the generated samples: a digital PDF, a scan (PNG) and a phone photo (JPEG). -->
+		<None Include="..\..\evals\samples\sample-01.pdf;..\..\evals\samples\sample-02.png;..\..\evals\samples\sample-03.jpg" Link="Samples\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+	</ItemGroup>
+</Project>

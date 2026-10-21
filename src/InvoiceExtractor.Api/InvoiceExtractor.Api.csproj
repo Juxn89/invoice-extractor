@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+	<PropertyGroup>
+		<UserSecretsId>invoice-extractor-api</UserSecretsId>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\InvoiceExtractor.Infrastructure\InvoiceExtractor.Infrastructure.csproj" />
+		<ProjectReference Include="..\InvoiceExtractor.ServiceDefaults\InvoiceExtractor.ServiceDefaults.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Design">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+	</ItemGroup>
+
+	<ItemGroup>
+		<InternalsVisibleTo Include="InvoiceExtractor.Integration.Tests" />
+	</ItemGroup>
+</Project>

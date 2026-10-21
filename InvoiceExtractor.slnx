@@ -3,10 +3,18 @@
     <Project Path="evals/InvoiceExtractor.Evals/InvoiceExtractor.Evals.csproj" />
   </Folder>
   <Folder Name="/src/">
+    <Project Path="src/InvoiceExtractor.Api/InvoiceExtractor.Api.csproj" />
+    <Project Path="src/InvoiceExtractor.AppHost/InvoiceExtractor.AppHost.csproj" />
+    <Project Path="src/InvoiceExtractor.Application/InvoiceExtractor.Application.csproj" />
     <Project Path="src/InvoiceExtractor.Domain/InvoiceExtractor.Domain.csproj" />
+    <Project Path="src/InvoiceExtractor.Infrastructure/InvoiceExtractor.Infrastructure.csproj" />
+    <Project Path="src/InvoiceExtractor.ServiceDefaults/InvoiceExtractor.ServiceDefaults.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/InvoiceExtractor.Application.Tests/InvoiceExtractor.Application.Tests.csproj" />
+    <Project Path="tests/InvoiceExtractor.Architecture.Tests/InvoiceExtractor.Architecture.Tests.csproj" />
     <Project Path="tests/InvoiceExtractor.Domain.Tests/InvoiceExtractor.Domain.Tests.csproj" />
     <Project Path="tests/InvoiceExtractor.Evals.Tests/InvoiceExtractor.Evals.Tests.csproj" />
+    <Project Path="tests/InvoiceExtractor.Integration.Tests/InvoiceExtractor.Integration.Tests.csproj" />
   </Folder>
 </Solution>

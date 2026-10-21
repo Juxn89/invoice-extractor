@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<ItemGroup>
+		<ProjectReference Include="..\InvoiceExtractor.Domain\InvoiceExtractor.Domain.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<!-- Ports only: the adapters (EF Core, PdfPig, SkiaSharp, Anthropic) live in Infrastructure. -->
+		<PackageReference Include="Microsoft.Extensions.Options" />
+		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<InternalsVisibleTo Include="InvoiceExtractor.Application.Tests" />
+	</ItemGroup>
+</Project>
