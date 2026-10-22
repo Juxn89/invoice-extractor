@@ -57,8 +57,20 @@ being read, already approved or failed.
 ### review-missing_invoice
 `review.missing_invoice` · 400. An approval must carry the invoice as approved, in the body's `invoice`.
 
+### review-duplicate_invoice
+`review.duplicate_invoice` · 409. The approved data is an invoice another document already settled: same
+issuer tax id, number and total ([ADR 0004](adr/0004-duplicate-invoices.md)). Approving it would put the
+purchase in the books twice. The problem carries `originalId`, the settled document's id, so the reviewer can
+open it; the document stays in review.
+
 ### document-not_found
 `document.not_found` · 404. No document has that id.
+
+## Examples
+
+### sample-not_found
+`sample.not_found` · 404. No example has that name. Only the files listed in the examples' `manifest.json` are
+served, and none when `Samples:Path` is not configured.
 
 ## Export
 

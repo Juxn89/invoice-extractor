@@ -156,7 +156,85 @@ public sealed class WorkerTests(PostgresFixture fixture) : IAsyncLifetime
 		Assert.Equal(DocumentStatus.NeedsReview, (await db.Documents.SingleAsync()).Status);
 	}
 
-	private ServiceProvider Services(params (string Key, string Value)[] settings)
+	[Fact]
+	public async Task A_second_file_of_a_settled_invoice_is_a_duplicate_pointing_at_the_first_and_is_not_exported()
+	{
+		var (first, second) = (await SeedAsync(2)) switch { var d => (d[0], d[1]) };
+		SameInvoice(first, second);
+		await using var services = Services();
+		var worker = services.GetRequiredService<ExtractionWorker>();
+
+		while (await worker.ProcessNextAsync(CancellationToken.None))
+		{
+		}
+
+		await using var db = fixture.CreateContext();
+		var settled = await db.Documents.SingleAsync(d => d.Id == first.Id);
+		var duplicate = await db.Documents.SingleAsync(d => d.Id == second.Id);
+		Assert.Equal((DocumentStatus.AutoApproved, DocumentStatus.Duplicate), (settled.Status, duplicate.Status));
+		Assert.Equal(first.Id, duplicate.DuplicateOf);
+		Assert.NotNull(settled.InvoiceKey);
+		Assert.Equal(1, await db.Extractions.CountAsync(e => e.DocumentId == second.Id));
+		Assert.Equal([first.Id], (await new DocumentRepository(db).ListApprovedAsync(null, CancellationToken.None)).Select(static d => d.Id));
+	}
+
+	[Fact]
+	public async Task Ten_files_of_one_invoice_read_by_four_workers_settle_once_each_read_once()
+	{
+		var documents = await SeedAsync(10);
+		SameInvoice([.. documents]);
+		await using var services = Services();
+		var worker = services.GetRequiredService<ExtractionWorker>();
+
+		async Task DrainAsync()
+		{
+			while (await worker.ProcessNextAsync(CancellationToken.None))
+			{
+			}
+		}
+
+		await Task.WhenAll(Enumerable.Range(0, 4).Select(_ => Task.Run(DrainAsync)));
+
+		await using var db = fixture.CreateContext();
+		var stored = await db.Documents.ToListAsync();
+		var settled = Assert.Single(stored, static d => d.Status == DocumentStatus.AutoApproved);
+		Assert.All(stored.Where(d => d.Id != settled.Id), d => Assert.Equal((DocumentStatus.Duplicate, settled.Id), (d.Status, d.DuplicateOf!.Value)));
+		Assert.All(_model.CallsPerDocument.Values, static calls => Assert.Equal(1, calls));
+	}
+
+	[Fact]
+	public async Task An_invoice_settled_between_the_check_and_the_save_ends_a_duplicate_without_another_model_call()
+	{
+		var (first, second) = (await SeedAsync(2)) switch { var d => (d[0], d[1]) };
+		SameInvoice(first, second);
+		await using (var services = Services())
+		{
+			Assert.True(await services.GetRequiredService<ExtractionWorker>().ProcessNextAsync(CancellationToken.None));
+		}
+
+		// The second worker's check misses the first one's settlement, as if both had checked at the same moment;
+		// the unique index then catches it on save.
+		await using var racing = Services(blindFirstLookup: true);
+		Assert.True(await racing.GetRequiredService<ExtractionWorker>().ProcessNextAsync(CancellationToken.None));
+
+		await using var db = fixture.CreateContext();
+		var duplicate = await db.Documents.SingleAsync(d => d.Id == second.Id);
+		Assert.Equal((DocumentStatus.Duplicate, first.Id, 1), (duplicate.Status, duplicate.DuplicateOf!.Value, duplicate.Attempts));
+		Assert.Equal(1, await db.Extractions.CountAsync(e => e.DocumentId == second.Id));
+		Assert.Equal(1, _model.CallsPerDocument[second.ContentHash.Value]);
+	}
+
+	private void SameInvoice(params Document[] documents)
+	{
+		foreach (var document in documents)
+		{
+			_model.Numbers[document.ContentHash.Value] = "F-000777";
+		}
+	}
+
+	private ServiceProvider Services(params (string Key, string Value)[] settings) => Services(false, settings);
+
+	private ServiceProvider Services(bool blindFirstLookup, params (string Key, string Value)[] settings)
 	{
 		var values = new Dictionary<string, string?>
 		{
@@ -177,6 +255,11 @@ public sealed class WorkerTests(PostgresFixture fixture) : IAsyncLifetime
 		services.AddSingleton<IInvoiceExtractor>(_model);
 		services.AddSingleton<IFileStore, HashFileStore>();
 		services.AddSingleton<IDocumentPreprocessor, PassThroughPreprocessor>();
+		if (blindFirstLookup)
+		{
+			services.AddScoped<IDocumentQueue>(static provider => new BlindFirstLookupQueue(new PgDocumentQueue(provider.GetRequiredService<InvoiceExtractorDbContext>())));
+		}
+
 		return services.BuildServiceProvider();
 	}
 
@@ -201,6 +284,38 @@ public sealed class WorkerTests(PostgresFixture fixture) : IAsyncLifetime
 		var document = await db.Documents.AsTracking().SingleAsync(d => d.Id == id);
 		change(document);
 		await db.SaveChangesAsync();
+	}
+
+	/// <summary>The real queue, except that its first look for a settled invoice finds nothing.</summary>
+	private sealed class BlindFirstLookupQueue(PgDocumentQueue inner) : IDocumentQueue
+	{
+		private bool _looked;
+
+		public Task<Document?> ClaimNextAsync(DateTimeOffset now, DateTimeOffset leaseUntil, CancellationToken cancellationToken) =>
+			inner.ClaimNextAsync(now, leaseUntil, cancellationToken);
+
+		public Task<Document?> FindAsync(DocumentId id, CancellationToken cancellationToken) => inner.FindAsync(id, cancellationToken);
+
+		public Task<DocumentId?> FindSettledAsync(InvoiceKey key, CancellationToken cancellationToken)
+		{
+			if (_looked)
+			{
+				return inner.FindSettledAsync(key, cancellationToken);
+			}
+
+			_looked = true;
+			return Task.FromResult<DocumentId?>(null);
+		}
+
+		public void DiscardChanges() => inner.DiscardChanges();
+
+		public Task<string> CountryOfAsync(BatchId id, CancellationToken cancellationToken) => inner.CountryOfAsync(id, cancellationToken);
+
+		public Task<decimal> SpentSinceAsync(DateTimeOffset since, CancellationToken cancellationToken) => inner.SpentSinceAsync(since, cancellationToken);
+
+		public void Add(Extraction extraction) => inner.Add(extraction);
+
+		public Task SaveChangesAsync(CancellationToken cancellationToken) => inner.SaveChangesAsync(cancellationToken);
 	}
 
 	/// <summary>The "file" is the document's hash, so the model knows which document it was given.</summary>
@@ -228,6 +343,9 @@ public sealed class WorkerTests(PostgresFixture fixture) : IAsyncLifetime
 		public ConcurrentDictionary<string, int> CallsPerDocument { get; } = new();
 
 		public ConcurrentBag<string> FailFor { get; } = [];
+
+		/// <summary>The invoice number read per document; by default each document is a different invoice.</summary>
+		public ConcurrentDictionary<string, string> Numbers { get; } = new();
 
 		public decimal CostUsd { get; set; } = 0.0005m;
 
@@ -258,7 +376,7 @@ public sealed class WorkerTests(PostgresFixture fixture) : IAsyncLifetime
 			}
 
 			return new InvoiceExtractionResult(
-				new ExtractedInvoice("Distribuidora El Mirador, S.A.", "J0310000252297", null, "F-000001", new DateOnly(2026, 10, 2), "NIO", [new("Café", 1, 100m, 100m)], 100m, 15m, 115m),
+				new ExtractedInvoice("Distribuidora El Mirador, S.A.", "J0310000252297", null, Numbers.GetValueOrDefault(key, $"F-{key[..12]}"), new DateOnly(2026, 10, 2), "NIO", [new("Café", 1, 100m, 100m)], 100m, 15m, 115m),
 				new Dictionary<string, FieldConfidence> { [InvoiceFields.Total] = FieldConfidence.High },
 				new ExtractionUsage("fake", 100, 10, CostUsd),
 				null);

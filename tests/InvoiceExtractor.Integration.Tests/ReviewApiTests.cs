@@ -110,6 +110,39 @@ public sealed class ReviewApiTests(PostgresFixture fixture) : IAsyncLifetime
 		Assert.Equal(id, Assert.Single(batch.Documents).Id);
 	}
 
+	[Fact]
+	public async Task Approving_an_invoice_another_document_already_settled_is_refused_with_the_original()
+	{
+		var original = await SeedSettledAsync(Misread with { Total = 1150m });
+		var id = await SeedInReviewAsync();
+
+		using var approve = await _client.PostAsJsonAsync($"/v1/documents/{id}/approve", new ApproveRequest(Misread with { Total = 1150m }), Json);
+
+		Assert.Equal(HttpStatusCode.Conflict, approve.StatusCode);
+		var problem = await approve.Content.ReadFromJsonAsync<JsonElement>();
+		Assert.Equal(ReviewErrors.DuplicateInvoice, problem.GetProperty("code").GetString());
+		Assert.Equal(original.ToString(), problem.GetProperty(ReviewErrors.OriginalDetail).GetString());
+
+		var review = await _client.GetFromJsonAsync<ReviewResponse>($"/v1/documents/{id}/review", Json);
+		Assert.Equal(DocumentStatus.NeedsReview, review!.Document.Status);
+	}
+
+	// A document approved by the rules, the invoice settled.
+	private async Task<Guid> SeedSettledAsync(ExtractedInvoice invoice)
+	{
+		var now = DateTimeOffset.UtcNow;
+		var batch = Batch.Start(1, "NI", now);
+		var document = Document.Queue(batch.Id, "factura.pdf", ContentHash.Compute(Guid.NewGuid().ToByteArray()), DocumentFormat.Pdf, 1, true, 100, now);
+		document.Claim(now, now.AddMinutes(5));
+		document.Complete(DocumentStatus.AutoApproved, now, InvoiceKey.From(invoice));
+
+		await using var db = fixture.CreateContext();
+		db.Batches.Add(batch);
+		db.Documents.Add(document);
+		await db.SaveChangesAsync();
+		return document.Id.Value;
+	}
+
 	// A document the worker read, broke a rule on, and sent to review: what the review screen starts from.
 	private async Task<Guid> SeedInReviewAsync()
 	{

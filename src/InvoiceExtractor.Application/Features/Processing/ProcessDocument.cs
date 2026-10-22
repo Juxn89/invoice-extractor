@@ -1,12 +1,15 @@
 namespace InvoiceExtractor.Application.Features.Processing;
 
 using InvoiceExtractor.Application.Abstractions;
+using InvoiceExtractor.Application.Common;
 using InvoiceExtractor.Domain.Documents;
+using InvoiceExtractor.Domain.Invoices;
 
 /// <summary>
 /// Reads one claimed document and records what happens to it. The model proposes, the domain decides: see
-/// <see cref="ExtractionPipeline"/> and <see cref="ReviewPolicy"/>. A transient failure (the API, the disk) is
-/// thrown, so the worker gives the document back for another attempt.
+/// <see cref="ExtractionPipeline"/> and <see cref="ReviewPolicy"/>. A reading of an invoice already settled under
+/// another document (same <see cref="InvoiceKey"/>) is recorded as a duplicate instead (ADR 0004). A transient
+/// failure (the API, the disk) is thrown, so the worker gives the document back for another attempt.
 /// </summary>
 /// <param name="queue">The queue that claimed it, which also stores the result.</param>
 /// <param name="files">Where the upload is.</param>
@@ -26,7 +29,7 @@ public sealed class ProcessDocument(
 	/// <param name="document">A document this worker holds a lease on.</param>
 	/// <param name="cancellationToken">Cancellation.</param>
 	/// <returns>Where the document ended.</returns>
-	/// <exception cref="Common.LeaseLostException">The lease ran out and another worker took the document.</exception>
+	/// <exception cref="LeaseLostException">The lease ran out and another worker took the document.</exception>
 	public async Task<DocumentStatus> HandleAsync(Document document, CancellationToken cancellationToken)
 	{
 		ArgumentNullException.ThrowIfNull(document);
@@ -39,6 +42,43 @@ public sealed class ProcessDocument(
 		var outcome = await pipeline.RunAsync(prepared, profiles.For(country), today, cancellationToken).ConfigureAwait(false);
 
 		var now = clock.GetUtcNow();
+		var key = outcome.Final.Result.Invoice is { } reading ? InvoiceKey.From(reading) : null;
+		Record(document, outcome, now);
+
+		if (key is not null && await queue.FindSettledAsync(key, cancellationToken).ConfigureAwait(false) is { } original)
+		{
+			document.MarkDuplicate(original, now);
+			await queue.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+			return document.Status;
+		}
+
+		document.Complete(outcome.Status, now, key);
+		try
+		{
+			await queue.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+			return document.Status;
+		}
+		catch (DuplicateInvoiceException) when (key is not null)
+		{
+			// Another worker settled the same invoice between the check and the save. The readings are already paid
+			// for, so they are recorded again on a clean unit of work, with the document as the duplicate.
+			queue.DiscardChanges();
+			var settled = await queue.FindSettledAsync(key, cancellationToken).ConfigureAwait(false);
+			var fresh = await queue.FindAsync(document.Id, cancellationToken).ConfigureAwait(false);
+			if (settled is null || fresh is null)
+			{
+				throw;
+			}
+
+			Record(fresh, outcome, now);
+			fresh.MarkDuplicate(settled.Value, now);
+			await queue.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+			return fresh.Status;
+		}
+	}
+
+	private void Record(Document document, PipelineOutcome outcome, DateTimeOffset now)
+	{
 		foreach (var attempt in outcome.Attempts)
 		{
 			var result = attempt.Result;
@@ -55,9 +95,5 @@ public sealed class ProcessDocument(
 				result.Usage.CostUsd,
 				now));
 		}
-
-		document.Complete(outcome.Status, now);
-		await queue.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-		return outcome.Status;
 	}
 }

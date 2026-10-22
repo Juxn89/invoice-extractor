@@ -26,6 +26,8 @@ export type DocumentResponse = {
 	attempts: number;
 	createdAt: string;
 	processedAt: string | null;
+	// When Duplicate: the settled document of the same invoice (same issuer tax id, number and total).
+	duplicateOf: string | null;
 };
 
 export type BatchResponse = {
@@ -61,7 +63,8 @@ export type Invoice = {
 	total: number | null;
 };
 
-export type ValidationIssue = { field: string; code: IssueCode; detail: string };
+// values: the rule's numbers, invariant, for the screen to word in its language (absent on older readings).
+export type ValidationIssue = { field: string; code: IssueCode; detail: string; values?: Record<string, string> | null };
 
 export type ReviewResponse = {
 	document: DocumentResponse;
@@ -81,6 +84,8 @@ export class ApiProblem extends Error {
 		readonly status: number,
 		readonly code: string,
 		message: string,
+		// The problem's other members, e.g. originalId on review.duplicate_invoice.
+		readonly details: Record<string, unknown> = {},
 	) {
 		super(message);
 	}
@@ -91,12 +96,15 @@ const base = "/api/v1";
 async function send<T>(path: string, init?: RequestInit): Promise<T> {
 	const response = await fetch(`${base}${path}`, { cache: "no-store", ...init });
 	if (!response.ok) {
-		const problem = (await response.json().catch(() => null)) as { code?: string; title?: string } | null;
-		throw new ApiProblem(response.status, problem?.code ?? "unknown", problem?.title ?? response.statusText);
+		const problem = (await response.json().catch(() => null)) as ({ code?: string; title?: string } & Record<string, unknown>) | null;
+		throw new ApiProblem(response.status, problem?.code ?? "unknown", problem?.title ?? response.statusText, problem ?? {});
 	}
 
 	return (await response.json()) as T;
 }
+
+export type SampleKind = "DigitalPdf" | "Scan" | "Photo" | "ThermalReceipt";
+export type Sample = { file: string; country: Country; kind: SampleKind; language: string };
 
 export type Dashboard = {
 	documents: number;
@@ -135,6 +143,17 @@ export const api = {
 			body: JSON.stringify({ invoice }),
 		}),
 	fileUrl: (id: string) => `${base}/documents/${id}/file`,
+	samples: () => send<Sample[]>("/samples"),
+	// The example as a File, uploaded afterwards like any file the user picked.
+	sampleFile: async (sample: Sample) => {
+		const response = await fetch(`${base}/samples/${encodeURIComponent(sample.file)}`);
+		if (!response.ok) {
+			throw new ApiProblem(response.status, "sample.not_found", response.statusText);
+		}
+
+		const blob = await response.blob();
+		return new File([blob], sample.file, { type: blob.type });
+	},
 };
 
 /** Statuses a document can still leave on its own, so the upload screen keeps polling while one is shown. */

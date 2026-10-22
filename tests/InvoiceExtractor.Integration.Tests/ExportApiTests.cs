@@ -17,6 +17,9 @@ public sealed class ExportApiTests(PostgresFixture fixture) : IAsyncLifetime
 
 	private readonly HttpClient _client = fixture.Api.CreateClient();
 
+	// Each seeding is different invoices: the same invoice can only be settled once (ADR 0004).
+	private int _seeds;
+
 	// An issuer name a hostile document could carry, copied faithfully by the model.
 	private const string FormulaName = "=HYPERLINK(\"http://evil.example\",\"Click\")";
 
@@ -141,6 +144,7 @@ public sealed class ExportApiTests(PostgresFixture fixture) : IAsyncLifetime
 	private async Task<Guid> SeedAsync()
 	{
 		var now = DateTimeOffset.UtcNow;
+		var seed = ++_seeds;
 		var batch = Batch.Start(4, "NI", now);
 		Document Queued(string name, int order) =>
 			Document.Queue(batch.Id, name, ContentHash.Compute(Guid.NewGuid().ToByteArray()), DocumentFormat.Png, 1, false, 100, now.AddMilliseconds(order));
@@ -158,15 +162,15 @@ public sealed class ExportApiTests(PostgresFixture fixture) : IAsyncLifetime
 			document.Claim(now, now.AddMinutes(5));
 		}
 
-		Read(auto, Invoice(FormulaName, "F-1", 1437.50m));
+		Read(auto, Invoice(FormulaName, $"F-{seed}1", 1437.50m));
 		auto.Complete(DocumentStatus.AutoApproved, now);
 
-		Read(reviewed, Invoice("Ferretería La Esperanza", "F-2", 1537.50m));
-		Read(reviewed, Invoice("Ferretería La Esperanza", "F-2", 1537.50m), retry: true);
+		Read(reviewed, Invoice("Ferretería La Esperanza", $"F-{seed}2", 1537.50m));
+		Read(reviewed, Invoice("Ferretería La Esperanza", $"F-{seed}2", 1537.50m), retry: true);
 		reviewed.Complete(DocumentStatus.NeedsReview, now);
-		reviewed.Approve(Invoice("Ferretería La Esperanza", "F-2", 1437.50m), now);
+		reviewed.Approve(Invoice("Ferretería La Esperanza", $"F-{seed}2", 1437.50m), now);
 
-		Read(waiting, Invoice("Imprenta Los Robles", "F-3", 999m));
+		Read(waiting, Invoice("Imprenta Los Robles", $"F-{seed}3", 999m));
 		waiting.Complete(DocumentStatus.NeedsReview, now);
 
 		failed.Release(maxAttempts: 1, now);

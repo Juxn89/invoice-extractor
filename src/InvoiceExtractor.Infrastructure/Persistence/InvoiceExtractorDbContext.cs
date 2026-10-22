@@ -1,6 +1,7 @@
 namespace InvoiceExtractor.Infrastructure.Persistence;
 
 using InvoiceExtractor.Domain.Documents;
+using InvoiceExtractor.Domain.Invoices;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
@@ -32,6 +33,7 @@ public sealed class InvoiceExtractorDbContext(DbContextOptions<InvoiceExtractorD
 		configurationBuilder.Properties<DocumentId>().HaveConversion<DocumentIdConverter>();
 		configurationBuilder.Properties<ExtractionId>().HaveConversion<ExtractionIdConverter>();
 		configurationBuilder.Properties<ContentHash>().HaveConversion<ContentHashConverter>();
+		configurationBuilder.Properties<InvoiceKey>().HaveConversion<InvoiceKeyConverter>();
 	}
 }
 
@@ -52,3 +54,6 @@ internal sealed class ExtractionIdConverter() : ValueConverter<ExtractionId, Gui
 
 internal sealed class ContentHashConverter()
 	: ValueConverter<ContentHash, string>(hash => hash.Value, value => ContentHash.FromHex(value));
+
+internal sealed class InvoiceKeyConverter()
+	: ValueConverter<InvoiceKey, string>(key => key.Value, value => InvoiceKey.FromHex(value));

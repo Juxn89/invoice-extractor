@@ -74,6 +74,10 @@ namespace InvoiceExtractor.Infrastructure.Persistence.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
+                    b.Property<Guid?>("DuplicateOf")
+                        .HasColumnType("uuid")
+                        .HasColumnName("duplicate_of");
+
                     b.Property<string>("FileName")
                         .IsRequired()
                         .HasMaxLength(255)
@@ -89,6 +93,12 @@ namespace InvoiceExtractor.Infrastructure.Persistence.Migrations
                     b.Property<bool>("HasTextLayer")
                         .HasColumnType("boolean")
                         .HasColumnName("has_text_layer");
+
+                    b.Property<string>("InvoiceKey")
+                        .HasMaxLength(64)
+                        .HasColumnType("character(64)")
+                        .HasColumnName("invoice_key")
+                        .IsFixedLength();
 
                     b.Property<DateTimeOffset?>("LeaseUntil")
                         .HasColumnType("timestamp with time zone")
@@ -135,6 +145,14 @@ namespace InvoiceExtractor.Infrastructure.Persistence.Migrations
                     b.HasIndex("ContentHash")
                         .IsUnique()
                         .HasDatabaseName("ix_documents_content_hash");
+
+                    b.HasIndex("DuplicateOf")
+                        .HasDatabaseName("ix_documents_duplicate_of");
+
+                    b.HasIndex("InvoiceKey")
+                        .IsUnique()
+                        .HasDatabaseName("ix_documents_invoice_key")
+                        .HasFilter("invoice_key IS NOT NULL");
 
                     b.HasIndex(new[] { "CreatedAt" }, "ix_documents_created_at")
                         .HasDatabaseName("ix_documents_created_at")
@@ -227,6 +245,12 @@ namespace InvoiceExtractor.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_documents_batches_batch_id");
+
+                    b.HasOne("InvoiceExtractor.Domain.Documents.Document", null)
+                        .WithMany()
+                        .HasForeignKey("DuplicateOf")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_documents_documents_duplicate_of");
                 });
 
             modelBuilder.Entity("InvoiceExtractor.Domain.Documents.Extraction", b =>

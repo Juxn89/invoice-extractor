@@ -4,7 +4,7 @@ import { useState } from "react";
 import type { DocumentStatus } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
 
-export type Segment = "AutoApproved" | "Approved" | "NeedsReview" | "Failed" | "InFlight";
+export type Segment = "AutoApproved" | "Approved" | "NeedsReview" | "Failed" | "Duplicate" | "InFlight";
 
 // Fixed order and fixed colour per segment: a segment keeps its colour whatever the others' counts are.
 const segments: { key: Segment; fill: string; statuses: DocumentStatus[] }[] = [
@@ -12,6 +12,7 @@ const segments: { key: Segment; fill: string; statuses: DocumentStatus[] }[] = [
 	{ key: "Approved", fill: "bg-chart-approved", statuses: ["Approved"] },
 	{ key: "NeedsReview", fill: "bg-chart-review", statuses: ["NeedsReview"] },
 	{ key: "Failed", fill: "bg-chart-failed", statuses: ["Failed"] },
+	{ key: "Duplicate", fill: "bg-chart-duplicate", statuses: ["Duplicate"] },
 	{ key: "InFlight", fill: "bg-chart-inflight", statuses: ["Queued", "Processing"] },
 ];
 

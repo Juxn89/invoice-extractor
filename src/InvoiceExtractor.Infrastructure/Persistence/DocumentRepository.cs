@@ -112,6 +112,13 @@ internal sealed class DocumentRepository(InvoiceExtractorDbContext db) : IDocume
 		return new ExtractionTotals(calls, retries, documents, cost);
 	}
 
+	public async Task<DocumentId?> FindSettledAsync(InvoiceKey key, CancellationToken cancellationToken) =>
+		await db.Documents.AsNoTracking()
+			.Where(d => d.InvoiceKey == key)
+			.Select(static d => (DocumentId?)d.Id)
+			.FirstOrDefaultAsync(cancellationToken)
+			.ConfigureAwait(false);
+
 	public Task<Document?> FindTrackedAsync(DocumentId id, CancellationToken cancellationToken) =>
 		db.Documents.AsTracking().FirstOrDefaultAsync(d => d.Id == id, cancellationToken);
 
@@ -126,6 +133,11 @@ internal sealed class DocumentRepository(InvoiceExtractorDbContext db) : IDocume
 		try
 		{
 			await db.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+		}
+		catch (DbUpdateException exception) when (exception.InnerException is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation, ConstraintName: DocumentConfiguration.InvoiceKeyIndex })
+		{
+			db.ChangeTracker.Clear();
+			throw new DuplicateInvoiceException("Another document settled the same invoice first.", exception);
 		}
 		catch (DbUpdateException exception) when (exception.InnerException is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation })
 		{

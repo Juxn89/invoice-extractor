@@ -41,6 +41,12 @@ public static class ReviewErrors
 
 	/// <summary>The approval carried no invoice.</summary>
 	public const string MissingInvoice = "review.missing_invoice";
+
+	/// <summary>The approved data is an invoice another document already settled.</summary>
+	public const string DuplicateInvoice = "review.duplicate_invoice";
+
+	/// <summary>The <see cref="Error.Details"/> key holding the settled document's id.</summary>
+	public const string OriginalDetail = "originalId";
 }
 
 /// <summary>The documents waiting for a person, oldest first.</summary>
@@ -127,10 +133,38 @@ public sealed class ApproveDocument(IDocumentRepository documents, TaxProfileCat
 			return Error.Conflict(ReviewErrors.NotInReview, $"Document {id} is {document.Status}, not waiting for review.");
 		}
 
-		document.Approve(request.Invoice with { Lines = request.Invoice.Lines ?? [] }, clock.GetUtcNow());
-		await documents.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+		var invoice = request.Invoice with { Lines = request.Invoice.Lines ?? [] };
+		var key = InvoiceKey.From(invoice);
+		if (key is not null && await documents.FindSettledAsync(key, cancellationToken).ConfigureAwait(false) is { } original)
+		{
+			return Duplicate(id, original);
+		}
+
+		document.Approve(invoice, clock.GetUtcNow());
+		try
+		{
+			await documents.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+		}
+		catch (DuplicateInvoiceException) when (key is not null)
+		{
+			// Settled by someone else between the check and the save: the same answer as if it had come first.
+			if (await documents.FindSettledAsync(key, cancellationToken).ConfigureAwait(false) is not { } settled)
+			{
+				throw;
+			}
+
+			return Duplicate(id, settled);
+		}
+
 		return await ReviewBuilder.BuildAsync(document, documents, profiles, clock, cancellationToken).ConfigureAwait(false);
 	}
+
+	// Approving it would put the same purchase in the books twice; the reviewer is pointed at the one there.
+	private static Error Duplicate(Guid id, DocumentId original) =>
+		Error.Conflict(
+			ReviewErrors.DuplicateInvoice,
+			$"Document {id} is the same invoice (issuer tax id, number and total) as document {original.Value}, already settled.",
+			new Dictionary<string, string> { [ReviewErrors.OriginalDetail] = original.Value.ToString() });
 }
 
 /// <summary>The original file, for the viewer.</summary>

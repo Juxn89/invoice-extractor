@@ -35,6 +35,12 @@ internal sealed class DocumentConfiguration : IEntityTypeConfiguration<Document>
 		// Idempotent upload: the same bytes are one document, whoever uploads them and however many times.
 		builder.HasIndex(d => d.ContentHash).IsUnique();
 
+		// One invoice is settled once, however many files of it arrive (ADR 0004). Only settled documents carry a
+		// key, so the index stays small, and two workers settling the same invoice at once cannot both succeed.
+		builder.Property(d => d.InvoiceKey).HasMaxLength(InvoiceKey.HexLength).IsFixedLength();
+		builder.HasIndex(d => d.InvoiceKey).IsUnique().HasFilter("invoice_key IS NOT NULL").HasDatabaseName(InvoiceKeyIndex);
+		builder.HasOne<Document>().WithMany().HasForeignKey(d => d.DuplicateOf).OnDelete(DeleteBehavior.Restrict);
+
 		builder.HasIndex(d => d.BatchId);
 
 		// The review queue lists what waits for a person, oldest first.
@@ -50,6 +56,9 @@ internal sealed class DocumentConfiguration : IEntityTypeConfiguration<Document>
 
 	/// <summary>Postgres' row version, which the claim statement returns along with the row.</summary>
 	internal const string RowVersion = "xmin";
+
+	/// <summary>The unique index on settled invoices, named so a violation of it can be told from others.</summary>
+	internal const string InvoiceKeyIndex = "ix_documents_invoice_key";
 
 	// Enums are stored by name, so the table reads on its own and reordering the enum cannot corrupt it.
 	private const int EnumColumnLength = 32;

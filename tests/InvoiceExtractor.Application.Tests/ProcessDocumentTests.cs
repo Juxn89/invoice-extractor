@@ -147,6 +147,43 @@ public sealed class ProcessDocumentTests
 	}
 
 	[Fact]
+	public async Task An_invoice_already_settled_under_another_file_is_a_duplicate_with_its_reading_kept()
+	{
+		var original = DocumentId.New();
+		_queue.Settled[InvoiceKey.From(Consistent())!] = original;
+		_extractor.Responses.Add(Read(Consistent()));
+
+		var (outcome, document) = await ProcessAsync();
+
+		Assert.Equal(DocumentStatus.Duplicate, outcome);
+		Assert.Equal(original, document.DuplicateOf);
+		Assert.Null(document.InvoiceKey);
+		Assert.Single(_queue.Saved);
+	}
+
+	[Fact]
+	public async Task A_reading_in_review_of_a_settled_invoice_is_a_duplicate_too()
+	{
+		_queue.Settled[InvoiceKey.From(Consistent())!] = DocumentId.New();
+		_extractor.Responses.Add(Read(Consistent() with { TaxTotal = 160m }));
+
+		var (outcome, _) = await ProcessAsync();
+
+		Assert.Equal(DocumentStatus.Duplicate, outcome);
+		Assert.Equal(2, _queue.Saved.Count); // the reading and its retry
+	}
+
+	[Fact]
+	public async Task An_approved_reading_settles_its_invoice()
+	{
+		_extractor.Responses.Add(Read(Consistent()));
+
+		var (_, document) = await ProcessAsync();
+
+		Assert.Equal(InvoiceKey.From(Consistent()), document.InvoiceKey);
+	}
+
+	[Fact]
 	public async Task The_batch_country_picks_the_rules()
 	{
 		// A Nicaraguan RUC is not an RFC: the same reading fails when the batch is Mexican.

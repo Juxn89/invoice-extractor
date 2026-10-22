@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { api, ApiProblem, type ReviewResponse, type ValidationIssue } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
+import { issueText } from "@/lib/issueText";
 import {
 	hasInvalidAmounts,
 	isInvalidAmount,
@@ -32,6 +33,7 @@ export function ReviewScreen({ id }: { id: string }) {
 	const [queue, setQueue] = useState<string[]>([]);
 	const [saving, setSaving] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+	const [refusedFor, setRefusedFor] = useState<string | null>(null);
 	const [notice, setNotice] = useState<string | null>(null);
 
 	useEffect(() => {
@@ -75,6 +77,7 @@ export function ReviewScreen({ id }: { id: string }) {
 	const approve = async () => {
 		setSaving(true);
 		setError(null);
+		setRefusedFor(null);
 		try {
 			const approved = await api.approve(id, toInvoice(form));
 			const following = queue.filter((other) => other !== id);
@@ -87,8 +90,10 @@ export function ReviewScreen({ id }: { id: string }) {
 			setLoaded({ review: approved, form: toForm(approved.invoice) });
 			setQueue(following);
 			setNotice(approved.issues.length > 0 ? t.review.approvedWithIssues : null);
-		} catch {
-			setError(t.review.approveFailed);
+		} catch (problem) {
+			const original = problem instanceof ApiProblem && problem.code === "review.duplicate_invoice" ? problem.details.originalId : undefined;
+			setError(typeof original === "string" ? t.review.duplicateRefused : t.review.approveFailed);
+			setRefusedFor(typeof original === "string" ? original : null);
 		} finally {
 			setSaving(false);
 		}
@@ -110,7 +115,7 @@ export function ReviewScreen({ id }: { id: string }) {
 				unsure={unsure}
 				invalid={invalid}
 				numeric={amountFields.includes(name)}
-				hint={name === "issuerTaxId" && fieldIssues.some((i) => i.code === "InvalidTaxId") ? `${t.review.expectedFormat} ${review.taxIdFormat}` : undefined}
+				hint={name === "issuerTaxId" && fieldIssues.some((i) => i.code === "InvalidTaxId") ? `${t.review.expectedFormat} ${t.taxIdFormats[review.country]}` : undefined}
 			/>
 		);
 	};
@@ -154,7 +159,16 @@ export function ReviewScreen({ id }: { id: string }) {
 					className="space-y-5 rounded-xl border border-line bg-card p-5 shadow-sm"
 				>
 					<IssueSummary issues={review.issues} failure={review.failure} />
-					{!editable && <p className="rounded-md bg-black/5 px-3 py-2 text-sm text-muted">{t.review.readOnly}</p>}
+					{review.document.duplicateOf ? (
+						<p className="rounded-md bg-black/5 px-3 py-2 text-sm text-muted">
+							{t.review.duplicateNotice}{" "}
+							<Link href={`/review/${review.document.duplicateOf}`} className="font-medium text-brand-dark hover:underline">
+								{t.review.duplicateOriginal}
+							</Link>
+						</p>
+					) : (
+						!editable && <p className="rounded-md bg-black/5 px-3 py-2 text-sm text-muted">{t.review.readOnly}</p>
+					)}
 					{notice && <p className="rounded-md bg-warn-soft px-3 py-2 text-sm text-warn">{notice}</p>}
 
 					<div className="grid gap-4 sm:grid-cols-2">{headerFields.map(field)}</div>
@@ -231,7 +245,16 @@ export function ReviewScreen({ id }: { id: string }) {
 
 					<div className="grid gap-4 sm:ml-auto sm:max-w-sm">{amountFields.map(field)}</div>
 
-					{error && <p className="rounded-md bg-danger-soft px-3 py-2 text-sm text-danger">{error}</p>}
+					{error && (
+						<p className="rounded-md bg-danger-soft px-3 py-2 text-sm text-danger">
+							{error}{" "}
+							{refusedFor && (
+								<Link href={`/review/${refusedFor}`} className="font-medium underline">
+									{t.review.duplicateOriginal}
+								</Link>
+							)}
+						</p>
+					)}
 
 					{editable && (
 						<div className="flex justify-end border-t border-line pt-4">
@@ -302,14 +325,16 @@ function IssueSummary({ issues, failure }: { issues: ValidationIssue[]; failure:
 }
 
 function IssueMessages({ issues }: { issues: ValidationIssue[] }) {
-	const { t } = useI18n();
+	const { locale, t } = useI18n();
+	// The numbers the rule compared, worded in the reader's language; a reading stored before issues carried
+	// their values shows the domain's English detail instead.
+	const detail = (issue: ValidationIssue) =>
+		issue.values ? t.issueDetails[issue.code](issueText(issue.values, locale, t.countries)) : issue.detail;
 	return (
 		<ul className="mt-1.5 space-y-0.5 text-xs text-danger">
 			{issues.map((issue, index) => (
 				<li key={index}>
-					<span className="font-medium">{t.issues[issue.code]}</span>{" "}
-					{/* The rule's own wording, with the numbers it compared; written by the domain, in English. */}
-					<span className="text-danger/70">({issue.detail})</span>
+					<span className="font-medium">{t.issues[issue.code]}</span> {detail(issue) && <span className="text-danger/70">({detail(issue)})</span>}
 				</li>
 			))}
 		</ul>

@@ -63,6 +63,29 @@ public sealed class InvoiceValidatorTests
 	}
 
 	[Fact]
+	public void Each_issue_carries_its_numbers_one_by_one_for_any_language_to_word()
+	{
+		var invoice = Valid() with
+		{
+			Lines = [new("Café en grano 1 kg", 2, 250.00m, 600.00m)],
+			Subtotal = 600.00m,
+			TaxTotal = 90.00m,
+			Total = 609.00m,
+			IssueDate = Today.AddYears(-11),
+		};
+
+		var issues = InvoiceValidator.Validate(invoice, Nicaragua, Today).Issues.ToDictionary(static i => i.Code);
+
+		Assert.Equal(
+			new Dictionary<string, string> { ["line"] = "1", ["quantity"] = "2", ["unitPrice"] = "250.00", ["expected"] = "500.00", ["actual"] = "600.00" },
+			issues[IssueCode.LineArithmetic].Values);
+		Assert.Equal(
+			new Dictionary<string, string> { ["subtotal"] = "600.00", ["tax"] = "90.00", ["expected"] = "690.00", ["actual"] = "609.00" },
+			issues[IssueCode.TotalMismatch].Values);
+		Assert.Equal(new Dictionary<string, string> { ["date"] = "2015-10-21", ["years"] = "10" }, issues[IssueCode.DateTooOld].Values);
+	}
+
+	[Fact]
 	public void A_line_whose_arithmetic_is_wrong_points_at_that_line()
 	{
 		var invoice = Valid() with

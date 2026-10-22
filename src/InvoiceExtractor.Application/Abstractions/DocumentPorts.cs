@@ -88,6 +88,12 @@ public interface IDocumentRepository
 	/// <returns>The totals.</returns>
 	Task<ExtractionTotals> ExtractionTotalsAsync(DateTimeOffset? since, CancellationToken cancellationToken);
 
+	/// <summary>The settled document (auto-approved or approved) of an invoice, if there is one.</summary>
+	/// <param name="key">The invoice's key.</param>
+	/// <param name="cancellationToken">Cancellation.</param>
+	/// <returns>Its id, or <see langword="null"/>.</returns>
+	Task<DocumentId?> FindSettledAsync(InvoiceKey key, CancellationToken cancellationToken);
+
 	/// <summary>One document, tracked, to change it.</summary>
 	/// <param name="id">Its id.</param>
 	/// <param name="cancellationToken">Cancellation.</param>

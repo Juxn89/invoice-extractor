@@ -22,11 +22,17 @@ internal static class ResultMapping
 			_ => StatusCodes.Status500InternalServerError,
 		};
 
+		var extensions = new Dictionary<string, object?> { ["code"] = error.Code };
+		foreach (var (key, value) in error.Details ?? new Dictionary<string, string>())
+		{
+			extensions[key] = value;
+		}
+
 		return Results.Problem(
 			statusCode: status,
 			title: error.Message,
 			type: $"{ErrorsDocument}#{error.Code.Replace('.', '-')}",
-			extensions: new Dictionary<string, object?> { ["code"] = error.Code });
+			extensions: extensions);
 	}
 
 	/// <summary>A result as HTTP.</summary>

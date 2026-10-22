@@ -3,7 +3,9 @@ namespace InvoiceExtractor.Infrastructure.Persistence;
 using InvoiceExtractor.Application.Abstractions;
 using InvoiceExtractor.Application.Common;
 using InvoiceExtractor.Domain.Documents;
+using InvoiceExtractor.Domain.Invoices;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 
 /// <summary>
 /// The queue is the documents table itself. A claim is one statement: pick the oldest claimable row, lock it,
@@ -42,6 +44,15 @@ internal sealed class PgDocumentQueue(InvoiceExtractorDbContext db) : IDocumentQ
 	public Task<Document?> FindAsync(DocumentId id, CancellationToken cancellationToken) =>
 		db.Documents.AsTracking().FirstOrDefaultAsync(d => d.Id == id, cancellationToken);
 
+	public async Task<DocumentId?> FindSettledAsync(InvoiceKey key, CancellationToken cancellationToken) =>
+		await db.Documents.AsNoTracking()
+			.Where(d => d.InvoiceKey == key)
+			.Select(static d => (DocumentId?)d.Id)
+			.FirstOrDefaultAsync(cancellationToken)
+			.ConfigureAwait(false);
+
+	public void DiscardChanges() => db.ChangeTracker.Clear();
+
 	public Task<string> CountryOfAsync(BatchId id, CancellationToken cancellationToken) =>
 		db.Batches.Where(b => b.Id == id).Select(static b => b.Country).SingleAsync(cancellationToken);
 
@@ -60,6 +71,10 @@ internal sealed class PgDocumentQueue(InvoiceExtractorDbContext db) : IDocumentQ
 		{
 			db.ChangeTracker.Clear();
 			throw new LeaseLostException("The document changed since it was claimed: another worker took it over.", exception);
+		}
+		catch (DbUpdateException exception) when (exception.InnerException is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation, ConstraintName: DocumentConfiguration.InvoiceKeyIndex })
+		{
+			throw new DuplicateInvoiceException("Another document settled the same invoice first.", exception);
 		}
 	}
 }

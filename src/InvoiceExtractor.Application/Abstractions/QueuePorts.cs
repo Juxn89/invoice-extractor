@@ -1,6 +1,7 @@
 namespace InvoiceExtractor.Application.Abstractions;
 
 using InvoiceExtractor.Domain.Documents;
+using InvoiceExtractor.Domain.Invoices;
 
 /// <summary>
 /// The work queue: documents waiting in the database, taken one at a time so that any number of workers, in
@@ -23,6 +24,15 @@ public interface IDocumentQueue
 	/// <param name="cancellationToken">Cancellation.</param>
 	/// <returns>The document, or <see langword="null"/>.</returns>
 	Task<Document?> FindAsync(DocumentId id, CancellationToken cancellationToken);
+
+	/// <summary>The settled document (auto-approved or approved) of an invoice, if there is one.</summary>
+	/// <param name="key">The invoice's key.</param>
+	/// <param name="cancellationToken">Cancellation.</param>
+	/// <returns>Its id, or <see langword="null"/>.</returns>
+	Task<DocumentId?> FindSettledAsync(InvoiceKey key, CancellationToken cancellationToken);
+
+	/// <summary>Forgets every change since the last save, after a save that failed.</summary>
+	void DiscardChanges();
 
 	/// <summary>The country a batch was uploaded with.</summary>
 	/// <param name="id">The batch.</param>

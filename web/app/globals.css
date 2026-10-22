@@ -25,6 +25,8 @@
 	--color-chart-review: #d9901a;
 	--color-chart-failed: #c9423a;
 	--color-chart-inflight: #2f7fc2;
+	/* Neutral on purpose: a duplicate is neither a success nor a failure, just not counted twice. */
+	--color-chart-duplicate: #8b919a;
 
 	--font-sans: ui-sans-serif, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 	--font-mono: ui-monospace, "Cascadia Mono", "SF Mono", Menlo, Consolas, monospace;

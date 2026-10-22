@@ -1,3 +1,5 @@
+import type { IssueText } from "@/lib/issueText";
+
 // Spanish is the reference dictionary: its shape is the type every other language must match.
 export const es = {
 	app: {
@@ -22,6 +24,22 @@ export const es = {
 		clear: "Quitar todo",
 		remove: "Quitar",
 		failed: "No se pudo subir el lote. Inténtalo de nuevo.",
+		samples: {
+			title: "¿No tienes facturas a mano? Prueba con un ejemplo",
+			hint: "Facturas y recibos ficticios. El primero que elijas define el país del lote.",
+			kinds: {
+				DigitalPdf: "PDF",
+				Scan: "Escaneo",
+				Photo: "Foto",
+				ThermalReceipt: "Recibo térmico",
+			},
+			countries: {
+				NI: "Nicaragua",
+				MX: "México",
+				XX: "Genérico",
+			},
+			add: (file: string) => `Agregar el ejemplo ${file}`,
+		},
 		outcomes: {
 			Queued: "En cola",
 			Duplicate: "Ya estaba subido",
@@ -62,6 +80,7 @@ export const es = {
 			Approved: "Aprobados en revisión",
 			NeedsReview: "Esperan revisión",
 			Failed: "Fallidos",
+			Duplicate: "Duplicadas",
 			InFlight: "En proceso",
 		},
 		share: (count: number, percent: string) => `${count} · ${percent}`,
@@ -92,6 +111,9 @@ export const es = {
 		lowConfidence: "El modelo no está seguro de este campo.",
 		expectedFormat: "Formato esperado:",
 		readOnly: "Este documento no está en revisión: solo lectura.",
+		duplicateNotice: "Es otra copia de una factura ya registrada (mismo ID fiscal del emisor, número y total): no se exporta dos veces.",
+		duplicateOriginal: "Ver la original",
+		duplicateRefused: "Ya hay una factura aprobada con el mismo ID fiscal del emisor, número y total.",
 		failure: "No se pudo leer el documento:",
 		cost: (calls: number, cost: string) => `${calls} ${calls === 1 ? "lectura" : "lecturas"} del modelo · USD ${cost}`,
 		approve: "Aprobar",
@@ -137,6 +159,27 @@ export const es = {
 		FutureDate: "La fecha está en el futuro.",
 		DateTooOld: "La fecha tiene más de 10 años.",
 	},
+	// The rule's numbers in the reader's language; MissingField needs none beyond its name.
+	issueDetails: {
+		MissingField: () => "",
+		LinesDoNotMatchSubtotal: (v: IssueText) => `Las líneas suman ${v.amount("expected")}; el subtotal dice ${v.amount("actual")}.`,
+		LineArithmetic: (v: IssueText) =>
+			`Línea ${v.number("line")}: ${v.number("quantity")} × ${v.amount("unitPrice")} da ${v.amount("expected")}; el importe dice ${v.amount("actual")}.`,
+		TotalMismatch: (v: IssueText) =>
+			`Subtotal ${v.amount("subtotal")} más impuesto ${v.amount("tax")} da ${v.amount("expected")}; el total dice ${v.amount("actual")}.`,
+		ImplausibleTaxRate: (v: IssueText) =>
+			v.text("country") === "XX"
+				? `Un impuesto de ${v.amount("tax")} sobre ${v.amount("subtotal")} es una tasa de ${v.percent("rate")}, fuera de lo plausible.`
+				: `Un impuesto de ${v.amount("tax")} sobre ${v.amount("subtotal")} es una tasa de ${v.percent("rate")}, que no se cobra en ${v.country("country")}.`,
+		InvalidTaxId: (v: IssueText) => `«${v.text("taxId")}» no tiene el formato esperado.`,
+		FutureDate: (v: IssueText) => `La fecha ${v.date("date")} es posterior a hoy.`,
+		DateTooOld: (v: IssueText) => `La fecha ${v.date("date")} tiene más de ${v.number("years")} años.`,
+	},
+	taxIdFormats: {
+		NI: "un RUC es una J seguida de 13 dígitos (empresa), o 13 dígitos seguidos de una letra (persona).",
+		MX: "un RFC son 3 letras (empresa) o 4 (persona), una fecha AAMMDD de 6 dígitos y 3 letras o dígitos.",
+		XX: "de 3 a 20 letras o dígitos, con al menos un dígito.",
+	},
 	errors: {
 		"batch.empty": "No se envió ningún archivo.",
 		"batch.too_many_files": "Demasiados archivos: un lote admite hasta 20.",
@@ -148,6 +191,7 @@ export const es = {
 		"document.unreadable": "El archivo está dañado o no se puede abrir.",
 		"document.encrypted": "El PDF tiene contraseña: sube una copia sin proteger.",
 		"document.image_too_large": "La imagen es demasiado grande (máximo 50 megapíxeles).",
+		"review.duplicate_invoice": "Ya hay una factura aprobada con el mismo emisor, número y total.",
 		unknown: "Error inesperado.",
 	},
 };

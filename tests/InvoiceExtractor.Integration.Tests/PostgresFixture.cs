@@ -37,6 +37,7 @@ public sealed class PostgresFixture : IAsyncLifetime
 			.UseEnvironment("Testing")
 			.UseSetting("ConnectionStrings:invoicesdb", ConnectionString)
 			.UseSetting("FileStore:RootPath", StorageRoot)
+			.UseSetting("Samples:Path", Samples.Folder)
 			// The API tests exercise the upload side; the worker has its own tests with a fake model.
 			.UseSetting("Processing:Enabled", "false"));
 	}
@@ -86,5 +87,7 @@ internal static class Samples
 
 	public static byte[] Photo => Read("sample-03.jpg");
 
-	private static byte[] Read(string name) => File.ReadAllBytes(Path.Combine(AppContext.BaseDirectory, "Samples", name));
+	public static string Folder => Path.Combine(AppContext.BaseDirectory, "Samples");
+
+	private static byte[] Read(string name) => File.ReadAllBytes(Path.Combine(Folder, name));
 }

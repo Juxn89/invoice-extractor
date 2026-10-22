@@ -1,9 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { readFile } from "node:fs/promises";
-import path from "node:path";
 import { readFirstSheet } from "./xlsx";
-
-const samples = path.resolve(__dirname, "../../evals/samples");
 
 // Columns of the "Facturas" sheet (src/InvoiceExtractor.Infrastructure/Export/ExportColumns.cs).
 const FileColumn = 1;
@@ -14,8 +11,13 @@ const TotalColumn = 12;
 // total as 7571.61; the printed total is 7517.61.
 test("a batch goes from upload to an approved Excel row, through human review", async ({ page }) => {
 	await page.goto("/");
-	await page.locator('input[type="file"]').setInputFiles(["sample-09.pdf", "sample-12.pdf", "sample-01.pdf"].map((file) => path.join(samples, file)));
-	await page.getByLabel("País de las facturas").selectOption("XX");
+	// The examples the API offers, fetched and uploaded like picked files; the first one sets the country.
+	for (const file of ["sample-09.pdf", "sample-12.pdf", "sample-01.pdf"]) {
+		await page.getByRole("button", { name: `Agregar el ejemplo ${file}` }).click();
+		await expect(page.getByRole("listitem").filter({ hasText: file })).toBeVisible();
+	}
+
+	await expect(page.getByLabel("País de las facturas")).toHaveValue("XX");
 	await page.getByRole("button", { name: "Procesar 3 archivos" }).click();
 
 	const batch = page.getByRole("article").first();
@@ -29,6 +31,8 @@ test("a batch goes from upload to an approved Excel row, through human review", 
 	// The rules failed, the model was asked again with what failed, and misread it again.
 	await expect(page.getByText("2 lecturas del modelo")).toBeVisible();
 	await expect(page.getByText("Subtotal más impuesto no da el total.").first()).toBeVisible();
+	// The rule's numbers, worded in Spanish with Spanish number formatting.
+	await expect(page.getByText("da 7517,61; el total dice 7571,61.")).toBeVisible();
 
 	const total = page.getByLabel("Total", { exact: true });
 	await expect(total).toHaveValue("7571.61");

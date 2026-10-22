@@ -1,3 +1,5 @@
+const int WebPort = 3010;
+
 var builder = DistributedApplication.CreateBuilder(args);
 
 // Pinned so local runs and the integration tests (Testcontainers) use the same Postgres.
@@ -24,5 +26,16 @@ if (Environment.GetEnvironmentVariable("ANTHROPIC_API_KEY") is { Length: > 0 } k
 {
 	api.WithEnvironment("Anthropic__ApiKey", builder.AddParameter("anthropic-api-key", key, secret: true));
 }
+
+// The web app on http://localhost:3010, with /api forwarded to the API wherever Aspire runs it. Aspire's proxy holds
+// 3010 and hands Next its own port in PORT, which "dev:aspire" ("next dev" without --port) honours; "pnpm dev" on
+// its own still serves 3010 directly. AddNextJsApp would do the same but is marked experimental (ASPIREJAVASCRIPT001).
+builder.AddJavaScriptApp("web", "../../web", "dev:aspire")
+	.WithPnpm(install: false)
+	.WithHttpEndpoint(port: WebPort, env: "PORT")
+	.WithEnvironment("API_URL", api.GetEndpoint("http"))
+	.WithEnvironment("NEXT_TELEMETRY_DISABLED", "1")
+	.WithExternalHttpEndpoints()
+	.WaitFor(api);
 
 await builder.Build().RunAsync();

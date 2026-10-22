@@ -6,6 +6,7 @@ using InvoiceExtractor.Application.Features.Documents;
 using InvoiceExtractor.Application.Features.Export;
 using InvoiceExtractor.Application.Features.Processing;
 using InvoiceExtractor.Application.Features.Review;
+using InvoiceExtractor.Application.Features.Samples;
 using InvoiceExtractor.Application.Features.Upload;
 using InvoiceExtractor.Infrastructure.Ai;
 using InvoiceExtractor.Infrastructure.Documents;
@@ -46,11 +47,13 @@ public static class DependencyInjection
 		AddOptions<ProcessingOptions>(services, configuration, ProcessingOptions.SectionName);
 		AddOptions<TaxOptions>(services, configuration, TaxOptions.SectionName);
 		AddOptions<ReplayOptions>(services, configuration, ReplayOptions.SectionName);
+		AddOptions<SamplesOptions>(services, configuration, SamplesOptions.SectionName);
 		services.AddSingleton<TaxProfileCatalog>();
 
 		services.AddScoped<IDocumentRepository, DocumentRepository>();
 		services.AddScoped<IDocumentQueue, PgDocumentQueue>();
 		services.AddSingleton<IFileStore, LocalFileStore>();
+		services.AddSingleton<ISampleLibrary, SampleLibrary>();
 		services.AddSingleton<IDocumentInspector, DocumentInspector>();
 		services.AddSingleton<IDocumentPreprocessor, DocumentPreprocessor>();
 		if (UsesReplay(configuration))
@@ -75,6 +78,7 @@ public static class DependencyInjection
 		services.AddScoped<ApproveDocument>();
 		services.AddScoped<ExportInvoices>();
 		services.AddScoped<GetDashboard>();
+		services.AddScoped<GetSample>();
 		services.AddSingleton<ExtractionPipeline>();
 		services.AddScoped<ProcessDocument>();
 

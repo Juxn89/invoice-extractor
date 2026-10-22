@@ -1,8 +1,8 @@
 "use client";
 
 import { FileImage, FileText, UploadCloud, X } from "lucide-react";
-import { useRef, useState, type DragEvent } from "react";
-import { api, ApiProblem, type Country, type UploadResponse } from "@/lib/api";
+import { useEffect, useRef, useState, type DragEvent } from "react";
+import { api, ApiProblem, type Country, type Sample, type UploadResponse } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
 
 const countries: Country[] = ["NI", "MX", "XX"];
@@ -22,8 +22,22 @@ export function UploadPanel({ onUploaded }: Props) {
 	const [sending, setSending] = useState(false);
 	const [result, setResult] = useState<UploadResponse | null>(null);
 	const [error, setError] = useState<string | null>(null);
+	const [samples, setSamples] = useState<Sample[]>([]);
+	const [fetching, setFetching] = useState<string | null>(null);
 
-	const add = (incoming: FileList | null) => {
+	// Offered only when the API has examples configured; without them the section is simply not there.
+	useEffect(() => {
+		let active = true;
+		api
+			.samples()
+			.then((list) => active && setSamples(list))
+			.catch(() => undefined);
+		return () => {
+			active = false;
+		};
+	}, []);
+
+	const add = (incoming: FileList | File[] | null) => {
 		if (!incoming) {
 			return;
 		}
@@ -35,6 +49,24 @@ export function UploadPanel({ onUploaded }: Props) {
 			const fresh = [...incoming].filter((f) => !known.has(`${f.name}:${f.size}`));
 			return [...current, ...fresh].slice(0, MaxFiles);
 		});
+	};
+
+	const addSample = async (sample: Sample) => {
+		setFetching(sample.file);
+		setError(null);
+		try {
+			const file = await api.sampleFile(sample);
+			// The first example picks the rules; a batch is validated with one country.
+			if (files.length === 0) {
+				setCountry(sample.country);
+			}
+
+			add([file]);
+		} catch {
+			setError(t.upload.failed);
+		} finally {
+			setFetching(null);
+		}
 	};
 
 	const onDrop = (event: DragEvent) => {
@@ -98,6 +130,40 @@ export function UploadPanel({ onUploaded }: Props) {
 					}}
 				/>
 			</div>
+
+			{samples.length > 0 && (
+				<div className="mt-4">
+					<p className="text-sm font-medium">{t.upload.samples.title}</p>
+					<p className="text-xs text-muted">{t.upload.samples.hint}</p>
+					<div className="mt-2 space-y-1.5">
+						{countries
+							.filter((code) => samples.some((s) => s.country === code))
+							.map((code) => (
+								<div key={code} className="flex flex-wrap items-center gap-1.5 text-sm">
+									<span className="w-20 shrink-0 text-xs text-muted">{t.upload.samples.countries[code]}</span>
+									{samples
+										.filter((s) => s.country === code)
+										.map((sample, index, group) => (
+											<button
+												key={sample.file}
+												type="button"
+												onClick={() => void addSample(sample)}
+												disabled={fetching !== null || files.some((f) => f.name === sample.file)}
+												aria-label={t.upload.samples.add(sample.file)}
+												title={sample.file}
+												className="rounded-full border border-line bg-card px-2.5 py-1 text-xs font-medium transition-colors hover:border-brand hover:text-brand-dark disabled:cursor-not-allowed disabled:opacity-40"
+											>
+												{t.upload.samples.kinds[sample.kind]}
+												{/* A second example of the same kind in one country gets a number: "PDF", "PDF 2". */}
+												{group.slice(0, index).some((other) => other.kind === sample.kind) &&
+													` ${group.slice(0, index + 1).filter((other) => other.kind === sample.kind).length}`}
+											</button>
+										))}
+								</div>
+							))}
+					</div>
+				</div>
+			)}
 
 			{files.length > 0 && (
 				<ul className="mt-4 divide-y divide-line rounded-lg border border-line">

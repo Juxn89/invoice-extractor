@@ -9,7 +9,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<!-- Real files from the generated samples: a digital PDF, a scan (PNG) and a phone photo (JPEG). -->
-		<None Include="..\..\evals\samples\sample-01.pdf;..\..\evals\samples\sample-02.png;..\..\evals\samples\sample-03.jpg" Link="Samples\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+		<!-- The generated samples with their manifest: real files to upload, and the API's "try an example" folder. -->
+		<None Include="..\..\evals\samples\*" Link="Samples\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
 	</ItemGroup>
 </Project>

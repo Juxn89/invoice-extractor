@@ -29,6 +29,7 @@ export function servers(model: Record<string, string>): PlaywrightTestConfig["we
 				ConnectionStrings__invoicesdb: database,
 				FileStore__RootPath: path.join(tmpdir(), `invoice-extractor-e2e-${run}`),
 				Processing__PollInterval: "00:00:00.500",
+				Samples__Path: path.resolve(__dirname, "../../evals/samples"),
 				...model,
 			},
 			timeout: 180_000,

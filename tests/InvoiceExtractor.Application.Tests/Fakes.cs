@@ -3,6 +3,7 @@ namespace InvoiceExtractor.Application.Tests;
 using InvoiceExtractor.Application.Abstractions;
 using InvoiceExtractor.Application.Common;
 using InvoiceExtractor.Domain.Documents;
+using InvoiceExtractor.Domain.Invoices;
 
 internal sealed class FakeDocumentRepository : IDocumentRepository
 {
@@ -43,6 +44,9 @@ internal sealed class FakeDocumentRepository : IDocumentRepository
 		Task.FromResult<IReadOnlyList<Extraction>>([]);
 
 	public Task<Document?> FindTrackedAsync(DocumentId id, CancellationToken cancellationToken) => GetAsync(id, cancellationToken);
+
+	public Task<DocumentId?> FindSettledAsync(InvoiceKey key, CancellationToken cancellationToken) =>
+		Task.FromResult(Documents.Where(d => d.InvoiceKey == key).Select(static d => (DocumentId?)d.Id).FirstOrDefault());
 
 	public Task<IReadOnlyList<Document>> ListApprovedAsync(BatchId? batch, CancellationToken cancellationToken) =>
 		Task.FromResult<IReadOnlyList<Document>>([.. Documents.Where(d => d.Status is DocumentStatus.AutoApproved or DocumentStatus.Approved && (batch is null || d.BatchId == batch))]);
@@ -135,6 +139,14 @@ internal sealed class FakeQueue : IDocumentQueue
 		Task.FromResult<Document?>(null);
 
 	public Task<Document?> FindAsync(DocumentId id, CancellationToken cancellationToken) => Task.FromResult<Document?>(null);
+
+	/// <summary>Invoices settled by other documents, as the queue would find them.</summary>
+	public Dictionary<InvoiceKey, DocumentId> Settled { get; } = [];
+
+	public Task<DocumentId?> FindSettledAsync(InvoiceKey key, CancellationToken cancellationToken) =>
+		Task.FromResult(Settled.TryGetValue(key, out var id) ? id : (DocumentId?)null);
+
+	public void DiscardChanges() => _staged.Clear();
 
 	public Task<string> CountryOfAsync(BatchId id, CancellationToken cancellationToken) => Task.FromResult(Countries[id]);
 

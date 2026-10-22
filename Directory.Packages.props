@@ -71,6 +71,8 @@
 	<!-- The AppHost SDK version (13.6.1, 7 Oct 2026) is in the AppHost project file. -->
 	<ItemGroup Label="Aspire">
 		<PackageVersion Include="Aspire.Hosting.PostgreSQL" Version="13.6.1" />
+		<!-- The web app as a resource (22 Oct 2026: 13.6.1, 7 Oct, matches the SDK; 13.6.2 and 13.6.3 are under two weeks). -->
+		<PackageVersion Include="Aspire.Hosting.JavaScript" Version="13.6.1" />
 		<!--
 			Transitive pin: Aspire.Hosting 13.6.1 brings MessagePack 2.5.302, vulnerable to GHSA-qhrr-8q5h-9q3h, and
 			NuGet audit fails the restore on it. 2.5.307 (3 Oct 2026) is the newest eligible patch on the 2.x line.

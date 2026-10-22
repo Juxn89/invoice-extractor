@@ -17,7 +17,8 @@ public enum ErrorKind
 /// <param name="Code">Stable, dotted, e.g. <c>document.too_large</c>.</param>
 /// <param name="Message">For a person.</param>
 /// <param name="Kind">How it maps to HTTP.</param>
-public sealed record Error(string Code, string Message, ErrorKind Kind)
+/// <param name="Details">What the caller needs to act on it, e.g. the id of the document it collides with.</param>
+public sealed record Error(string Code, string Message, ErrorKind Kind, IReadOnlyDictionary<string, string>? Details = null)
 {
 	/// <summary>A 400.</summary>
 	/// <param name="code">The code.</param>
@@ -34,8 +35,10 @@ public sealed record Error(string Code, string Message, ErrorKind Kind)
 	/// <summary>A 409.</summary>
 	/// <param name="code">The code.</param>
 	/// <param name="message">The message.</param>
+	/// <param name="details">What the caller needs to act on it.</param>
 	/// <returns>The error.</returns>
-	public static Error Conflict(string code, string message) => new(code, message, ErrorKind.Conflict);
+	public static Error Conflict(string code, string message, IReadOnlyDictionary<string, string>? details = null) =>
+		new(code, message, ErrorKind.Conflict, details);
 }
 
 /// <summary>A value or an <see cref="Error"/>.</summary>

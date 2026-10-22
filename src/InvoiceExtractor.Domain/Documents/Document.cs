@@ -120,6 +120,15 @@ public sealed class Document
 	/// <summary>When a person approved it.</summary>
 	public DateTimeOffset? ReviewedAt { get; private set; }
 
+	/// <summary>
+	/// While settled (auto-approved or approved), which invoice it is for the books. Unique across documents, so
+	/// one invoice is settled once however many files of it arrive; null otherwise, or when a part was not read.
+	/// </summary>
+	public InvoiceKey? InvoiceKey { get; private set; }
+
+	/// <summary>When <see cref="DocumentStatus.Duplicate"/>, the settled document it repeats.</summary>
+	public DocumentId? DuplicateOf { get; private set; }
+
 	/// <summary>Registers an uploaded file, queued for extraction.</summary>
 	/// <param name="batchId">The upload it came in.</param>
 	/// <param name="fileName">The user's file name.</param>
@@ -174,8 +183,9 @@ public sealed class Document
 	/// <summary>Records a finished extraction: approved without review, or waiting for a person.</summary>
 	/// <param name="outcome"><see cref="DocumentStatus.AutoApproved"/> or <see cref="DocumentStatus.NeedsReview"/>.</param>
 	/// <param name="now">The current time.</param>
+	/// <param name="key">The reading's invoice key; kept only when it is approved, since only then is it settled.</param>
 	/// <exception cref="InvalidOperationException">It is not being processed.</exception>
-	public void Complete(DocumentStatus outcome, DateTimeOffset now)
+	public void Complete(DocumentStatus outcome, DateTimeOffset now, InvoiceKey? key = null)
 	{
 		EnsureProcessing();
 		if (outcome is not (DocumentStatus.AutoApproved or DocumentStatus.NeedsReview))
@@ -184,6 +194,29 @@ public sealed class Document
 		}
 
 		Status = outcome;
+		InvoiceKey = outcome == DocumentStatus.AutoApproved ? key : null;
+		LeaseUntil = null;
+		ProcessedAt = now;
+	}
+
+	/// <summary>
+	/// Records that the reading is an invoice already settled under another document: it is not exported and no
+	/// one needs to review it. Its extractions are kept, so what was read and what it cost stay visible.
+	/// </summary>
+	/// <param name="original">The settled document with the same <see cref="InvoiceKey"/>.</param>
+	/// <param name="now">The current time.</param>
+	/// <exception cref="InvalidOperationException">It is not being processed.</exception>
+	/// <exception cref="ArgumentException">It would be a duplicate of itself.</exception>
+	public void MarkDuplicate(DocumentId original, DateTimeOffset now)
+	{
+		EnsureProcessing();
+		if (original == Id)
+		{
+			throw new ArgumentException("A document cannot repeat itself.", nameof(original));
+		}
+
+		Status = DocumentStatus.Duplicate;
+		DuplicateOf = original;
 		LeaseUntil = null;
 		ProcessedAt = now;
 	}
@@ -228,6 +261,7 @@ public sealed class Document
 		Status = DocumentStatus.Approved;
 		ReviewedInvoice = invoice;
 		ReviewedAt = now;
+		InvoiceKey = InvoiceKey.From(invoice);
 	}
 
 	private void EnsureProcessing()

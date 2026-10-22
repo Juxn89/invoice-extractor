@@ -16,6 +16,7 @@ using InvoiceExtractor.Domain.Documents;
 /// <param name="Attempts">Extraction attempts so far.</param>
 /// <param name="CreatedAt">When it was uploaded.</param>
 /// <param name="ProcessedAt">When processing last finished.</param>
+/// <param name="DuplicateOf">When a duplicate, the settled document of the same invoice.</param>
 public sealed record DocumentResponse(
 	Guid Id,
 	Guid BatchId,
@@ -27,7 +28,8 @@ public sealed record DocumentResponse(
 	DocumentStatus Status,
 	int Attempts,
 	DateTimeOffset CreatedAt,
-	DateTimeOffset? ProcessedAt)
+	DateTimeOffset? ProcessedAt,
+	Guid? DuplicateOf)
 {
 	/// <summary>Maps a document.</summary>
 	/// <param name="document">The document.</param>
@@ -46,7 +48,8 @@ public sealed record DocumentResponse(
 			document.Status,
 			document.Attempts,
 			document.CreatedAt,
-			document.ProcessedAt);
+			document.ProcessedAt,
+			document.DuplicateOf?.Value);
 	}
 }
 

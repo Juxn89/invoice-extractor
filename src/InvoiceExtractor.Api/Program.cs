@@ -50,6 +50,7 @@ app.MapDefaultEndpoints();
 app.MapBatchEndpoints(maxBatchBytes);
 app.MapDocumentEndpoints();
 app.MapExportEndpoints();
+app.MapSampleEndpoints();
 
 // Fails fast on bad configuration even before the first request touches the options.
 _ = app.Services.GetRequiredService<IOptions<UploadOptions>>().Value;

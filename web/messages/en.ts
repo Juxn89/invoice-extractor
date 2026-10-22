@@ -1,3 +1,4 @@
+import type { IssueText } from "@/lib/issueText";
 import type { Messages } from "./es";
 
 export const en: Messages = {
@@ -23,6 +24,22 @@ export const en: Messages = {
 		clear: "Remove all",
 		remove: "Remove",
 		failed: "The batch could not be uploaded. Try again.",
+		samples: {
+			title: "No invoices at hand? Try an example",
+			hint: "Fictitious invoices and receipts. The first one you pick sets the batch's country.",
+			kinds: {
+				DigitalPdf: "PDF",
+				Scan: "Scan",
+				Photo: "Photo",
+				ThermalReceipt: "Thermal receipt",
+			},
+			countries: {
+				NI: "Nicaragua",
+				MX: "Mexico",
+				XX: "Generic",
+			},
+			add: (file: string) => `Add the example ${file}`,
+		},
 		outcomes: {
 			Queued: "Queued",
 			Duplicate: "Already uploaded",
@@ -63,6 +80,7 @@ export const en: Messages = {
 			Approved: "Approved in review",
 			NeedsReview: "Waiting for review",
 			Failed: "Failed",
+			Duplicate: "Duplicates",
 			InFlight: "In progress",
 		},
 		share: (count: number, percent: string) => `${count} · ${percent}`,
@@ -93,6 +111,9 @@ export const en: Messages = {
 		lowConfidence: "The model is not sure of this field.",
 		expectedFormat: "Expected format:",
 		readOnly: "This document is not in review: read only.",
+		duplicateNotice: "This is another copy of an invoice already on record (same issuer tax id, number and total): it is not exported twice.",
+		duplicateOriginal: "See the original",
+		duplicateRefused: "An invoice with the same issuer tax id, number and total is already approved.",
 		failure: "The document could not be read:",
 		cost: (calls: number, cost: string) => `${calls} model ${calls === 1 ? "reading" : "readings"} · USD ${cost}`,
 		approve: "Approve",
@@ -138,6 +159,26 @@ export const en: Messages = {
 		FutureDate: "The date is in the future.",
 		DateTooOld: "The date is more than 10 years old.",
 	},
+	issueDetails: {
+		MissingField: () => "",
+		LinesDoNotMatchSubtotal: (v: IssueText) => `The lines add up to ${v.amount("expected")}; the subtotal reads ${v.amount("actual")}.`,
+		LineArithmetic: (v: IssueText) =>
+			`Line ${v.number("line")}: ${v.number("quantity")} × ${v.amount("unitPrice")} is ${v.amount("expected")}; the amount reads ${v.amount("actual")}.`,
+		TotalMismatch: (v: IssueText) =>
+			`Subtotal ${v.amount("subtotal")} plus tax ${v.amount("tax")} is ${v.amount("expected")}; the total reads ${v.amount("actual")}.`,
+		ImplausibleTaxRate: (v: IssueText) =>
+			v.text("country") === "XX"
+				? `Tax of ${v.amount("tax")} on ${v.amount("subtotal")} is a rate of ${v.percent("rate")}, beyond what is plausible.`
+				: `Tax of ${v.amount("tax")} on ${v.amount("subtotal")} is a rate of ${v.percent("rate")}, which ${v.country("country")} does not charge.`,
+		InvalidTaxId: (v: IssueText) => `“${v.text("taxId")}” does not have the expected format.`,
+		FutureDate: (v: IssueText) => `The date ${v.date("date")} is after today.`,
+		DateTooOld: (v: IssueText) => `The date ${v.date("date")} is more than ${v.number("years")} years old.`,
+	},
+	taxIdFormats: {
+		NI: "a RUC is J followed by 13 digits (a company), or 13 digits followed by a letter (a person).",
+		MX: "an RFC is 3 letters (a company) or 4 (a person), a 6-digit date YYMMDD, then 3 letters or digits.",
+		XX: "3 to 20 letters or digits, at least one of them a digit.",
+	},
 	errors: {
 		"batch.empty": "No file was sent.",
 		"batch.too_many_files": "Too many files: a batch takes up to 20.",
@@ -149,6 +190,7 @@ export const en: Messages = {
 		"document.unreadable": "The file is damaged or cannot be opened.",
 		"document.encrypted": "The PDF is password-protected: upload an unprotected copy.",
 		"document.image_too_large": "The image is too large (50 megapixels at most).",
+		"review.duplicate_invoice": "An invoice with the same issuer, number and total is already approved.",
 		unknown: "Unexpected error.",
 	},
 };

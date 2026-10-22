@@ -61,16 +61,18 @@ flowchart LR
     Rules -- yes --> Auto([Approved by the rules])
     Rules -- still no --> Review[Human review<br/>side by side]
     Review --> Approved([Approved by a person])
-    Auto --> Excel[[Excel · CSV]]
-    Approved --> Excel
+    Auto --> Key{{Invoice already<br/>in the books?}}
+    Approved --> Key
+    Key -- no --> Excel[[Excel · CSV]]
+    Key -- yes --> Dup([Duplicate, not exported])
 
     classDef io fill:#1d4ed8,stroke:#38bdf8,color:#ffffff
     classDef work fill:#1e293b,stroke:#64748b,color:#f8fafc
     classDef gate fill:#b45309,stroke:#fbbf24,color:#ffffff
     classDef out fill:#166534,stroke:#4ade80,color:#ffffff
-    class Up,Auto,Approved io
+    class Up,Auto,Approved,Dup io
     class Check,Queue,Read,Retry,Review work
-    class Rules gate
+    class Rules,Key gate
     class Excel out
 ```
 
@@ -81,7 +83,11 @@ flowchart LR
 3. **Rules decide.** A reading that breaks a rule is read once more, with the failed checks as feedback. If
    it still fails, or the model says it guessed a key field, a person reviews it. Nothing is ever approved
    on the model's word alone.
-4. **Export** what was approved, by the rules or by a person, as an Excel workbook or a CSV.
+4. **Settle each invoice once.** The same invoice often arrives twice, as the supplier's PDF and a photo of the
+   paper copy. A reading whose issuer tax id, number and total match an invoice already settled ends as a
+   duplicate pointing at the original, and is never exported twice
+   ([ADR 0004](docs/adr/0004-duplicate-invoices.md)).
+5. **Export** what was approved, by the rules or by a person, as an Excel workbook or a CSV.
 
 ## What's inside
 
@@ -107,7 +113,7 @@ flowchart LR
     <td width="33%" valign="top">
       <img src="docs/readme/icon-review.svg" width="44" alt=""><br>
       <b>Human review, side by side</b><br>
-      <sub>The original beside the reading, the failing field in red, the model's doubts in amber; approvals are recorded with their values.</sub>
+      <sub>The original beside the reading, the failing field in red with the rule's numbers in the reader's language, the model's doubts in amber.</sub>
     </td>
     <td width="33%" valign="top">
       <img src="docs/readme/icon-queue.svg" width="44" alt=""><br>
@@ -117,7 +123,7 @@ flowchart LR
     <td width="33%" valign="top">
       <img src="docs/readme/icon-export.svg" width="44" alt=""><br>
       <b>Excel and CSV</b><br>
-      <sub>Amounts as numbers, dates as dates, invoices and lines on two sheets; formula injection neutralised in both formats.</sub>
+      <sub>Amounts as numbers, dates as dates, invoices and lines on two sheets; an invoice that arrives twice is exported once; formula injection neutralised.</sub>
     </td>
   </tr>
   <tr>
@@ -147,13 +153,13 @@ app runs and uploads wait in the queue.
 ```bash
 cp .env.template .env                               # put ANTHROPIC_API_KEY in it; .env is git-ignored
 set -a; . ./.env; set +a
-dotnet run --project src/InvoiceExtractor.AppHost   # Postgres + API through .NET Aspire, API on :5110
-cd web && pnpm install && pnpm dev                  # the web app on http://localhost:3010
+(cd web && pnpm install)                            # once
+dotnet run --project src/InvoiceExtractor.AppHost   # Postgres, the API and the web app, through .NET Aspire
 ```
 
-Open http://localhost:3010 and upload a few files from [`evals/samples`](evals/samples), choosing their
-country (each one's is in [`manifest.json`](evals/samples/manifest.json)). In Development the workers stop
-for the day after USD 0.05.
+Open http://localhost:3010 and pick a few of the examples under the upload box ("try an example"): fictitious
+invoices and receipts from [`evals/samples`](evals/samples), uploaded the same way as your own files. In
+Development the workers stop for the day after USD 0.05.
 
 | Endpoint | What it does |
 |---|---|
@@ -163,6 +169,7 @@ for the day after USD 0.05.
 | `POST /v1/documents/{id}/approve` | Approve, with the reviewer's corrections |
 | `GET /v1/export?format=xlsx\|csv&lang=es\|en&batchId=` | The approved invoices |
 | `GET /v1/dashboard` | Statuses, auto-approval rate and cost |
+| `GET /v1/samples` · `GET /v1/samples/{file}` | The examples the web app offers, and their files |
 
 Errors are Problem Details with a stable code, listed in [`docs/errors.md`](docs/errors.md).
 
@@ -198,7 +205,7 @@ src/
   InvoiceExtractor.Application     use cases (upload, process, review, export, dashboard) and their ports
   InvoiceExtractor.Infrastructure  EF Core + Postgres, the queue and workers, Claude, PdfPig, SkiaSharp, ClosedXML
   InvoiceExtractor.Api             Minimal API endpoints, the composition root
-  InvoiceExtractor.AppHost         .NET Aspire: Postgres 18 and the API
+  InvoiceExtractor.AppHost         .NET Aspire: Postgres 18, the API and the web app
 web/                               Next.js 16 front end, Spanish and English; Playwright E2E and the demo recorder
 evals/                             dataset generator, scorer, thresholds and versioned results
 tests/                             domain, application, architecture (ArchUnitNET), integration (Testcontainers)
@@ -214,6 +221,7 @@ numbers.
 |---|---|---|
 | **The model proposes, rules decide** | A language model is sometimes confidently wrong; arithmetic and formats can be checked without it | Rules catch inconsistency, not every misreading: a wrong value that still adds up passes. The evals count those: none so far |
 | **One retry with the failed checks** ([ADR 0002](docs/adr/0002-retry-with-validation-feedback.md)) | Most misreadings are a digit or a letter; told what failed, the model fixes them | About +50 % cost on hard documents, and planted errors are paid for twice before they reach a person |
+| **One invoice settled once, by business key** ([ADR 0004](docs/adr/0004-duplicate-invoices.md)) | A photo and the PDF of one invoice are different files but one purchase; a unique index on issuer tax id + number + total keeps it out of the books twice, even when two workers settle it at once | A misread digit in the total hides a duplicate, and two invoices with the same issuer, number and total count as one |
 | **Queue in Postgres, not a broker** ([ADR 0003](docs/adr/0003-queue-in-postgres.md)) | `SKIP LOCKED` and a lease give exactly-once processing with the database the app already has | Polling, and a throughput ceiling far above what an accounting office uploads |
 | **Haiku 5.5 for every call** | The task is reading printed fields; the evals pass at USD 0.0006–0.001 per document | A stronger model might read the worst photos better; the review queue covers them instead |
 | **Recorded answers for E2E** | The whole app runs in CI without a key or a bill | The recordings test the pipeline, not the model; the paid evals do that |
@@ -222,7 +230,7 @@ numbers.
 
 ```bash
 dotnet build                                   # warnings are errors
-dotnet test                                    # 166 tests: unit, architecture and integration (needs Docker)
+dotnet test                                    # 184 tests: unit, architecture and integration (needs Docker)
 dotnet format whitespace --verify-no-changes
 
 cd web
