@@ -1,10 +1,10 @@
 # Demo
 
-A 70-second walkthrough in Spanish, recorded against the real model:
+A 75-second walkthrough in Spanish, recorded against the real model:
 
-1. A batch of three documents is uploaded: a digital PDF, a scan and a phone photo of a receipt.
+1. Three of the built-in examples are picked and uploaded: a digital PDF, a scan and a phone photo of a receipt.
 2. Two of them pass every rule and are approved automatically.
-3. The third has a total that does not add up, so it goes to review.
+3. The third has a total that does not add up, so it goes to review, with the rule's numbers in Spanish.
 4. The reviewer corrects the total and approves it.
 5. The dashboard shows what the batch cost.
 
@@ -31,4 +31,4 @@ ANTHROPIC_API_KEY=... pnpm demo      # e2e/demo/demo.spec.ts; Docker encodes the
 ```
 
 Each run starts the API and a production build of the web app against a new database, and reads the documents with
-Claude Haiku 5.5. The last recording made 4 calls, one of them the retry, and cost USD 0.0024.
+Claude Haiku 5.5. The last recording made 4 calls, one of them the retry, and cost USD 0.0022.

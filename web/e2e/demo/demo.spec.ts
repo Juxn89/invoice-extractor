@@ -12,7 +12,6 @@ import { baseURL } from "../servers";
 // sharp; Playwright's own recorder writes low-bitrate VP8. The MP4 is encoded by ffmpeg in a container (pinned
 // image, no network), so nothing is installed on the host.
 
-const samples = path.resolve(__dirname, "../../../evals/samples");
 const out = path.resolve(__dirname, "../../../docs/demo");
 const readmeShots = path.resolve(__dirname, "../../../docs/readme/shots");
 const ffmpegImage = "jrottenberg/ffmpeg:9.0.1-ubuntu2404@sha256:7e8154ec4779d335054de5e173f1ef52032abaa12ac7416cc7f0c88f4973bd14";
@@ -133,9 +132,15 @@ test("demo", async ({ browser }) => {
 
 	await say(page, "Sube fotos o PDFs de facturas y recibos: salen como datos listos para contabilidad.", 5000);
 
-	await page.locator('input[type="file"]').setInputFiles(files.map((file) => path.join(samples, file)));
-	await page.getByLabel("País de las facturas").selectOption("XX");
-	await say(page, "Un PDF, un escaneo y la foto de un recibo.", 4000);
+	await say(page, "¿Sin facturas a mano? La app trae ejemplos: un PDF, un escaneo y la foto de un recibo.", 0);
+	for (const file of files) {
+		await page.getByRole("button", { name: `Agregar el ejemplo ${file}` }).click();
+		await expect(page.getByRole("listitem").filter({ hasText: file })).toBeVisible();
+		await page.waitForTimeout(700);
+	}
+
+	await expect(page.getByLabel("País de las facturas")).toHaveValue("XX");
+	await page.waitForTimeout(2500);
 	await shot(page, path.join(out, "01-subida.png"));
 
 	await page.getByRole("button", { name: "Procesar 3 archivos" }).click();
@@ -167,9 +172,13 @@ test("demo", async ({ browser }) => {
 	}
 
 	const amount = async (label: string) => Number((await page.getByLabel(label, { exact: true }).inputValue()).replace(",", "."));
-	const corrected = ((await amount("Subtotal")) + (await amount("Impuesto"))).toFixed(2);
-	await say(page, `En el recibo, el total impreso está mal sumado. La revisora lo corrige: ${corrected}.`, 1500);
+	const [subtotal, tax, printed] = [await amount("Subtotal"), await amount("Impuesto"), await amount("Total")];
+	const corrected = (subtotal + tax).toFixed(2);
+	const es = (value: number) => value.toFixed(2).replace(".", ",");
 	const total = page.getByLabel("Total", { exact: true });
+	await total.scrollIntoViewIfNeeded();
+	await say(page, `Debajo, los números de la regla: ${es(subtotal)} + ${es(tax)} da ${es(subtotal + tax)}, pero el recibo dice ${es(printed)}.`, 5000);
+	await say(page, `El total impreso está mal sumado. La revisora lo corrige: ${corrected}.`, 1500);
 	await total.click();
 	await total.fill("");
 	await total.pressSequentially(corrected, { delay: 140 });

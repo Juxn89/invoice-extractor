@@ -33,15 +33,15 @@ to an Excel workbook; what does not goes to a person, with the failing field hig
 original. The model proposes, the rules decide.
 
 > [!NOTE]
-> **Built in public, measured in public.** Watch the [70-second demo](docs/demo/demo.mp4) (Spanish captions),
-> recorded against the real model: three documents, two approved by the rules, one corrected by a reviewer.
+> **Built in public, measured in public.** Watch the [75-second demo](docs/demo/demo.mp4) (Spanish captions),
+> recorded against the real model: three of the built-in examples, two approved by the rules, one corrected by a reviewer.
 > Every number on this page comes from the evals in [`evals/`](evals/README.md), whose results are
 > versioned in [`evals/results`](evals/results), the failures included.
 
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/readme/showcase-dark.png">
-    <img src="docs/readme/showcase-light.png" alt="The review screen: a photographed receipt on the left; on the right the fields Claude read, the total flagged in red because subtotal plus tax does not give it, and the tax marked as uncertain by the model" width="100%">
+    <img src="docs/readme/showcase-light.png" alt="The review screen: a photographed receipt on the left; on the right the fields Claude read, the total flagged in red because subtotal plus tax does not give it" width="100%">
   </picture>
 </p>
 <p align="center"><sub>A real reading by Claude Haiku 5.5: the receipt's printed total is wrong, so no rule lets it through. · <a href="docs/demo">all screenshots</a></sub></p>
@@ -195,7 +195,7 @@ dotnet run --project evals/InvoiceExtractor.Evals -- run oracle                 
 dotnet run --project evals/InvoiceExtractor.Evals -- run claude --allow-paid [--set hard]   # paid, budget-guarded
 ```
 
-The demo batch (one PDF, one scan, one photo) cost USD 0.0024 for four calls, one of them the retry.
+The demo batch (one PDF, one scan, one photo) cost USD 0.0022 for four calls, one of them the retry.
 
 ## Architecture
 
