@@ -45,6 +45,7 @@ public static class DependencyInjection
 		AddOptions<AnthropicOptions>(services, configuration, AnthropicOptions.SectionName);
 		AddOptions<ProcessingOptions>(services, configuration, ProcessingOptions.SectionName);
 		AddOptions<TaxOptions>(services, configuration, TaxOptions.SectionName);
+		AddOptions<ReplayOptions>(services, configuration, ReplayOptions.SectionName);
 		services.AddSingleton<TaxProfileCatalog>();
 
 		services.AddScoped<IDocumentRepository, DocumentRepository>();
@@ -52,7 +53,15 @@ public static class DependencyInjection
 		services.AddSingleton<IFileStore, LocalFileStore>();
 		services.AddSingleton<IDocumentInspector, DocumentInspector>();
 		services.AddSingleton<IDocumentPreprocessor, DocumentPreprocessor>();
-		services.AddSingleton<IInvoiceExtractor, ClaudeInvoiceExtractor>();
+		if (UsesReplay(configuration))
+		{
+			services.AddSingleton<IInvoiceExtractor, ReplayInvoiceExtractor>();
+		}
+		else
+		{
+			services.AddSingleton<IInvoiceExtractor, ClaudeInvoiceExtractor>();
+		}
+
 		services.AddSingleton<IAccountingExport, ExcelExport>();
 		services.AddSingleton<IAccountingExport, CsvExport>();
 
@@ -74,6 +83,12 @@ public static class DependencyInjection
 
 		return services;
 	}
+
+	/// <summary>Whether recorded answers replace the model (end-to-end tests only; see <see cref="ReplayOptions"/>).</summary>
+	/// <param name="configuration">The configuration.</param>
+	/// <returns><see langword="true"/> when a replay file is configured.</returns>
+	public static bool UsesReplay(IConfiguration configuration) =>
+		!string.IsNullOrWhiteSpace(configuration?.GetSection(ReplayOptions.SectionName)[nameof(ReplayOptions.File)]);
 
 	/// <summary>Bound, validated with data annotations, and checked at startup rather than on first use.</summary>
 	private static OptionsBuilder<TOptions> AddOptions<TOptions>(IServiceCollection services, IConfiguration configuration, string section)

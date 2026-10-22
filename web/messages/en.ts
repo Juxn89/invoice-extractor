@@ -51,7 +51,7 @@ export const en: Messages = {
 		inReview: "Waiting for review",
 		inReviewHint: "open the queue",
 		cost: "Total model cost",
-		costHint: (calls: number, retries: number) => `${calls} readings · ${retries} retries`,
+		costHint: (calls: number, retries: number) => `${calls} ${calls === 1 ? "reading" : "readings"} · ${retries} ${retries === 1 ? "retry" : "retries"}`,
 		perDocument: "Average cost per document",
 		perDocumentHint: "retries included",
 		today: "Spent today",

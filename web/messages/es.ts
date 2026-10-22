@@ -50,7 +50,7 @@ export const es = {
 		inReview: "Esperan revisión",
 		inReviewHint: "abrir la cola",
 		cost: "Costo total del modelo",
-		costHint: (calls: number, retries: number) => `${calls} lecturas · ${retries} reintentos`,
+		costHint: (calls: number, retries: number) => `${calls} ${calls === 1 ? "lectura" : "lecturas"} · ${retries} ${retries === 1 ? "reintento" : "reintentos"}`,
 		perDocument: "Costo medio por documento",
 		perDocumentHint: "reintentos incluidos",
 		today: "Gasto de hoy",

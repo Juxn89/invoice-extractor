@@ -8,6 +8,12 @@ using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Recorded answers instead of the model exist for the end-to-end tests; a deployed API must never serve them.
+if (DependencyInjection.UsesReplay(builder.Configuration) && !builder.Environment.IsDevelopment())
+{
+	throw new InvalidOperationException("Replay:File is set outside Development: recorded answers are for the end-to-end tests only.");
+}
+
 builder.AddServiceDefaults();
 builder.Services.AddProblemDetails();
 builder.Services.ConfigureHttpJsonOptions(options =>

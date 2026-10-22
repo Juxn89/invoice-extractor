@@ -25,7 +25,7 @@ const headerFields: ScalarField[] = ["issuerName", "issuerTaxId", "receiverName"
 type Loaded = { review: ReviewResponse; form: InvoiceForm };
 
 export function ReviewScreen({ id }: { id: string }) {
-	const { t } = useI18n();
+	const { locale, t } = useI18n();
 	const router = useRouter();
 	const [loaded, setLoaded] = useState<Loaded | null>(null);
 	const [missing, setMissing] = useState(false);
@@ -64,7 +64,8 @@ export function ReviewScreen({ id }: { id: string }) {
 	const position = queue.indexOf(id);
 	const previous = position > 0 ? queue[position - 1] : undefined;
 	const next = position >= 0 && position < queue.length - 1 ? queue[position + 1] : undefined;
-	const cost = review.costUsd.toFixed(6);
+	// A model call costs fractions of a cent: six decimals, in the reader's number format like the dashboard.
+	const cost = new Intl.NumberFormat(locale, { minimumFractionDigits: 6, maximumFractionDigits: 6 }).format(review.costUsd);
 
 	const update = (change: (form: InvoiceForm) => InvoiceForm) => setLoaded({ review, form: change(form) });
 	const setField = (field: ScalarField, value: string) => update((f) => ({ ...f, [field]: value }));

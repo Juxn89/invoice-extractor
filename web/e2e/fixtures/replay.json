@@ -1,0 +1,152 @@
+{
+  "_comment": "Recorded model answers for the end-to-end test (src/InvoiceExtractor.Infrastructure/Ai/ReplayInvoiceExtractor.cs). sample-09 and sample-12 are read right; sample-01's total is misread (7571.61 for 7517.61), so the rules send it to review.",
+  "answers": [
+    {
+      "match": "INV-001255",
+      "answer": {
+        "issuerName": "Mirlo Coffee Supply LLC",
+        "issuerTaxId": "98-7654321",
+        "receiverName": "Harbor Hotel",
+        "number": "INV-001255",
+        "issueDate": "2026-01-08",
+        "currency": "USD",
+        "lines": [
+          {
+            "description": "USB keyboard",
+            "quantity": "1",
+            "unitPrice": "16.52",
+            "lineTotal": "16.52"
+          },
+          {
+            "description": "Brown sugar",
+            "quantity": "2.0",
+            "unitPrice": "1.51",
+            "lineTotal": "3.02"
+          },
+          {
+            "description": "Whole milk 1 L",
+            "quantity": "3",
+            "unitPrice": "1.40",
+            "lineTotal": "4.20"
+          }
+        ],
+        "subtotal": "23.74",
+        "taxTotal": "2.43",
+        "total": "26.17",
+        "confidence": {
+          "issuerTaxId": "high",
+          "number": "high",
+          "issueDate": "high",
+          "lines": "high",
+          "subtotal": "high",
+          "taxTotal": "high",
+          "total": "high"
+        }
+      }
+    },
+    {
+      "match": "FV-001290",
+      "answer": {
+        "issuerName": "Suministros Ibéricos, S.L.",
+        "issuerTaxId": "B12345678",
+        "receiverName": "Cafetería El Retiro",
+        "number": "FV-001290",
+        "issueDate": "2026-06-08",
+        "currency": "EUR",
+        "lines": [
+          {
+            "description": "Martillo de uña",
+            "quantity": "7",
+            "unitPrice": "9.26",
+            "lineTotal": "64.82"
+          },
+          {
+            "description": "Filtros de papel (100 u.)",
+            "quantity": "6",
+            "unitPrice": "3.01",
+            "lineTotal": "18.06"
+          },
+          {
+            "description": "Café en grano 1 kg",
+            "quantity": "2",
+            "unitPrice": "8.33",
+            "lineTotal": "16.66"
+          },
+          {
+            "description": "Caja de tornillos",
+            "quantity": "4",
+            "unitPrice": "1.83",
+            "lineTotal": "7.32"
+          }
+        ],
+        "subtotal": "106.86",
+        "taxTotal": "22.44",
+        "total": "129.30",
+        "confidence": {
+          "issuerTaxId": "high",
+          "number": "high",
+          "issueDate": "high",
+          "lines": "high",
+          "subtotal": "high",
+          "taxTotal": "high",
+          "total": "high"
+        }
+      }
+    },
+    {
+      "match": "F-001037",
+      "answer": {
+        "issuerName": "Distribuidora El Mirador, S.A.",
+        "issuerTaxId": "J0310000252297",
+        "receiverName": "Escuela Rubén Darío",
+        "number": "F-001037",
+        "issueDate": "2026-06-09",
+        "currency": "NIO",
+        "lines": [
+          {
+            "description": "Martillo de uña",
+            "quantity": "7",
+            "unitPrice": "281.05",
+            "lineTotal": "1967.35"
+          },
+          {
+            "description": "Azúcar morena",
+            "quantity": "2.5",
+            "unitPrice": "43.51",
+            "lineTotal": "108.78"
+          },
+          {
+            "description": "Azúcar morena",
+            "quantity": "2.0",
+            "unitPrice": "61.97",
+            "lineTotal": "123.94"
+          },
+          {
+            "description": "Caja de tornillos",
+            "quantity": "10",
+            "unitPrice": "65.76",
+            "lineTotal": "657.60"
+          },
+          {
+            "description": "Café en grano 1 kg",
+            "quantity": "9",
+            "unitPrice": "408.82",
+            "lineTotal": "3679.38"
+          }
+        ],
+        "subtotal": "6537.05",
+        "taxTotal": "980.56",
+        "total": "7571.61",
+        "confidence": {
+          "issuerTaxId": "high",
+          "number": "high",
+          "issueDate": "high",
+          "lines": "high",
+          "subtotal": "high",
+          "taxTotal": "high",
+          "total": "high"
+        }
+      }
+    }
+  ]
+}

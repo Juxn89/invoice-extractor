@@ -67,7 +67,7 @@ export function StatusBar({ byStatus }: { byStatus: Record<DocumentStatus, numbe
 				)}
 			</div>
 
-			<ul className="mt-4 grid gap-x-6 gap-y-2 text-sm sm:grid-cols-2 lg:grid-cols-3">
+			<ul className="mt-4 grid gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
 				{rows.map((row) => (
 					<li
 						key={row.key}
